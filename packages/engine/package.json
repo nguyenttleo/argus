@@ -1,0 +1,18 @@
+{
+  "name": "@argus/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./url": "./src/url/analyze.ts",
+    "./file": "./src/file/analyze.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@argus/shared": "*",
+    "tldts": "^6.1.0"
+  }
+}

@@ -1,0 +1,41 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# build / next
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# runtime data (scans db, quarantine, caches)
+.data/
+.data-*/
+data/
+quarantine/
+*.sqlite
+*.sqlite-*
+*.db
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
+
+# test artifacts
+coverage/
+*.tmp
+tmp/

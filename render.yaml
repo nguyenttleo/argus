@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: argus
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    disk:
+      name: argus-data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ARGUS_API_PORT
+        value: "8089"
+      - key: ARGUS_API
+        value: http://127.0.0.1:8089
+      - key: ARGUS_DATA_DIR
+        value: /data
+      - key: ARGUS_DB_PATH
+        value: /data/argus.sqlite
+      - key: ARGUS_IP_HASH_SECRET
+        generateValue: true
+      - key: ARGUS_RATE_LIMIT_MAX
+        value: "120"
+      - key: ARGUS_RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: ARGUS_QUARANTINE
+        value: "false"
+      - key: ARGUS_REPUTATION_DEFAULT
+        value: "true"

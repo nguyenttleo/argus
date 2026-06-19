@@ -1,0 +1,35 @@
+{
+  "name": "argus",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Argus - an all-seeing URL & file threat scanner. Defensive by design.",
+  "workspaces": [
+    "packages/shared",
+    "packages/engine",
+    "packages/server",
+    "packages/cli"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node scripts/start-public.mjs",
+    "test": "node --test",
+    "typecheck": "tsc -p packages/shared/tsconfig.json && tsc -p packages/engine/tsconfig.json && tsc -p packages/server/tsconfig.json && tsc -p packages/cli/tsconfig.json",
+    "verify": "npm test && npm run typecheck && npm run web:build",
+    "smoke": "node scripts/smoke.mjs",
+    "scan": "node packages/cli/src/cli.ts",
+    "server": "node packages/server/src/main.ts",
+    "seed": "node packages/server/src/seed.ts",
+    "web": "npm --prefix web run dev",
+    "web:install": "npm --prefix web install",
+    "web:build": "npm --prefix web run build",
+    "web:start": "npm --prefix web run start",
+    "demo": "node packages/cli/src/cli.ts demo"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3"
+  }
+}

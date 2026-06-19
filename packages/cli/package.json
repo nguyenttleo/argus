@@ -1,0 +1,16 @@
+{
+  "name": "@argus/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "argus": "src/cli.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@argus/engine": "*",
+    "@argus/shared": "*"
+  }
+}

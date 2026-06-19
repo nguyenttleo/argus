@@ -1,0 +1,21 @@
+services:
+  argus:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      ARGUS_API_PORT: "8089"
+      ARGUS_API: http://127.0.0.1:8089
+      ARGUS_DATA_DIR: /data
+      ARGUS_DB_PATH: /data/argus.sqlite
+      ARGUS_IP_HASH_SECRET: ${ARGUS_IP_HASH_SECRET:-replace-this-before-public-use}
+      ARGUS_RATE_LIMIT_MAX: ${ARGUS_RATE_LIMIT_MAX:-120}
+      ARGUS_RATE_LIMIT_WINDOW_MS: ${ARGUS_RATE_LIMIT_WINDOW_MS:-60000}
+      ARGUS_QUARANTINE: ${ARGUS_QUARANTINE:-false}
+    volumes:
+      - argus-data:/data
+
+volumes:
+  argus-data:

@@ -1,0 +1,12 @@
+.git
+.claude
+.data
+.data-test
+node_modules
+web/node_modules
+web/.next
+npm-debug.log*
+*.log
+.env
+.env.local
+.env.*.local
