@@ -71,12 +71,14 @@ history persists across restarts and deploys.
 
 ## Render
 
-This repo includes `render.yaml` for a single Docker web service with:
+This repo includes `render.yaml` for a free single Docker web service with:
 
 - `healthCheckPath: /api/health`
-- a persistent disk mounted at `/data`
 - generated `ARGUS_IP_HASH_SECRET`
 - production defaults for the public web service and private API
+
+The free deployment uses Render's ephemeral filesystem. URL/file scanning works, but SQLite scan
+history resets when the service restarts or redeploys.
 
 After the first deploy, run the smoke test from your machine:
 
@@ -84,10 +86,21 @@ After the first deploy, run the smoke test from your machine:
 ARGUS_PUBLIC_URL=https://<your-render-service>.onrender.com npm run smoke
 ```
 
+To keep scan history later, upgrade the service plan and add a persistent disk:
+
+```yaml
+disk:
+  name: argus-data
+  mountPath: /data
+  sizeGB: 1
+```
+
 ## Operational Notes
 
-- Keep one instance when using SQLite on a local persistent disk. Scaling horizontally requires a
-  shared database or a per-instance data strategy.
+- Free Render instances may sleep or restart. That is fine for demos, but history is not durable
+  without a disk.
+- Keep one instance when using SQLite on a persistent disk. Scaling horizontally requires a shared
+  database or a per-instance data strategy.
 - Do not expose the Fastify API directly unless you also configure CORS, rate limits, and network
   access intentionally. The default public surface should be the Next.js app.
 - If you enable `ARGUS_QUARANTINE=true`, keep `/data` persistent and monitor disk usage.

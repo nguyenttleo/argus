@@ -2,14 +2,10 @@ services:
   - type: web
     name: argus
     runtime: docker
-    plan: starter
+    plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /api/health
-    disk:
-      name: argus-data
-      mountPath: /data
-      sizeGB: 10
     envVars:
       - key: NODE_ENV
         value: production
