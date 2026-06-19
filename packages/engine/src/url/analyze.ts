@@ -29,6 +29,7 @@ import { safeFetch, type FetchResult } from './fetcher.ts';
 import { gatherDns, dnsSignals, type DnsResolver } from './dns.ts';
 import { rdapLookup, rdapSignals } from './rdap.ts';
 import { analyzeContent, contentSignals } from './content.ts';
+import { TRUSTED_SSO_IDPS, TRUSTED_SSO_RELYING_PARTIES } from './data.ts';
 import type { Resolver } from './ssrf.ts';
 
 export class InvalidUrlError extends Error {}
@@ -177,6 +178,38 @@ function looksLikeHtml(contentType: string | undefined, body: string): boolean {
   return /<!doctype html|<html|<head|<body|<form|<title/i.test(body.slice(0, 1000));
 }
 
+function registrableFromUrl(url: string | undefined, base?: string): string | undefined {
+  if (!url) return undefined;
+  try {
+    const href = base ? new URL(url, base).href : url;
+    return parseDomain(href).domain ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function isTrustedSsoRedirect(fromDomain: string | undefined, toDomain: string | undefined): boolean {
+  return !!fromDomain && !!toDomain && TRUSTED_SSO_RELYING_PARTIES.has(fromDomain) && TRUSTED_SSO_IDPS.has(toDomain);
+}
+
+function isTrustedSsoFinalLexicalNoise(signal: Signal): boolean {
+  return signal.id === 'url.long' || signal.id === 'url.keywords' || signal.id === 'url.open_redirect';
+}
+
+function trustedSsoSignal(fromDomain: string | undefined, toDomain: string | undefined): Signal {
+  return {
+    id: 'net.trusted_sso_redirect',
+    category: 'network',
+    title: 'Trusted single sign-on handoff',
+    detail: `The link starts on ${fromDomain ?? 'a trusted app'} and hands off to ${toDomain ?? 'a trusted identity provider'} for SSO. Long OAuth/SAML login URLs and cross-domain redirects are expected in this flow.`,
+    severity: 'info',
+    weight: 70,
+    confidence: 0.85,
+    mitigates: true,
+    evidence: { from: fromDomain, to: toDomain },
+  };
+}
+
 export async function analyzeUrl(
   rawInput: string,
   options: UrlScanOptions = {},
@@ -253,6 +286,7 @@ export async function analyzeUrl(
   let reputationTarget = lexical.parsed.normalized;
   let fetchBody: string | undefined;
   let pageUrl = lexical.parsed.normalized;
+  let trustedSsoFlow = false;
   if (options.fetch && httpScheme) {
     const fetchRes = await fetchImpl(lexical.parsed.normalized, {
       resolver: deps.resolver,
@@ -296,19 +330,25 @@ export async function analyzeUrl(
       try {
         const finalLex = analyzeLexical(fetchRes.finalUrl);
         if (finalLex.parsed.registrableDomain && finalLex.parsed.registrableDomain !== detail.registrableDomain) {
-          addSignal({
-            id: 'net.cross_domain_redirect',
-            category: 'network',
-            title: 'Redirects to a different domain',
-            detail: `The link starts on ${detail.registrableDomain ?? detail.host} but ends on ${finalLex.parsed.registrableDomain}. Reputable links rarely hop registered domains.`,
-            severity: 'low',
-            weight: 20,
-            confidence: 0.6,
-            evidence: { from: detail.registrableDomain, to: finalLex.parsed.registrableDomain },
-          });
+          trustedSsoFlow = isTrustedSsoRedirect(detail.registrableDomain, finalLex.parsed.registrableDomain);
+          addSignal(
+            trustedSsoFlow
+              ? trustedSsoSignal(detail.registrableDomain, finalLex.parsed.registrableDomain)
+              : {
+                  id: 'net.cross_domain_redirect',
+                  category: 'network',
+                  title: 'Redirects to a different domain',
+                  detail: `The link starts on ${detail.registrableDomain ?? detail.host} but ends on ${finalLex.parsed.registrableDomain}. Reputable links rarely hop registered domains.`,
+                  severity: 'low',
+                  weight: 20,
+                  confidence: 0.6,
+                  evidence: { from: detail.registrableDomain, to: finalLex.parsed.registrableDomain },
+                },
+          );
           iocs.push({ type: 'domain', value: finalLex.parsed.registrableDomain });
         }
         for (const s of finalLex.signals) {
+          if (trustedSsoFlow && isTrustedSsoFinalLexicalNoise(s)) continue;
           if (!signalsById.has(s.id)) {
             addSignal({ ...s, detail: `After redirect to ${finalLex.parsed.host}: ${s.detail}` });
           }
@@ -336,7 +376,17 @@ export async function analyzeUrl(
     const content = analyzeContent(fetchBody, pageUrl);
     detail.content = content;
     const pageDomain = parseDomain(pageUrl).domain ?? domain ?? undefined;
-    for (const s of contentSignals(content, { registrableDomain: pageDomain ?? undefined })) addSignal(s);
+    const metaRefreshDomain = registrableFromUrl(content.metaRefresh, pageUrl);
+    const trustedSsoMetaRefresh =
+      trustedSsoFlow &&
+      !!pageDomain &&
+      !!metaRefreshDomain &&
+      TRUSTED_SSO_IDPS.has(pageDomain) &&
+      TRUSTED_SSO_IDPS.has(metaRefreshDomain);
+    for (const s of contentSignals(content, { registrableDomain: pageDomain ?? undefined })) {
+      if (trustedSsoMetaRefresh && s.id === 'content.meta_refresh') continue;
+      addSignal(s);
+    }
   }
 
   // ── Reputation ─────────────────────────────────────────────────────────────

@@ -91,6 +91,25 @@ export const POPULAR_DOMAINS = new Set([
   'wikihow.com', 'x.com', 'cloudfront.net', 'akamai.com', 'googleusercontent.com',
 ]);
 
+/** Legitimate app platforms that commonly hand users off to enterprise SSO. */
+export const TRUSTED_SSO_RELYING_PARTIES = new Set([
+  'instructure.com',
+  'canvaslms.com',
+]);
+
+/** Identity-provider domains whose long OAuth/SAML URLs are expected in SSO flows. */
+export const TRUSTED_SSO_IDPS = new Set([
+  'microsoftonline.com',
+  'microsoft.com',
+  'live.com',
+  'office.com',
+  'okta.com',
+  'okta-emea.com',
+  'auth0.com',
+  'google.com',
+  'accounts.google.com',
+]);
+
 /** Query-parameter names commonly used for open-redirects. */
 export const REDIRECT_PARAMS = new Set([
   'url', 'redirect', 'redirect_uri', 'redirecturl', 'return', 'returnurl',

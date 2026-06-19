@@ -88,6 +88,47 @@ test('cross-domain redirect re-analyzes the final URL', async () => {
   assert.equal(r.verdict, 'malicious');
 });
 
+test('trusted Canvas to Microsoft SSO redirects stay safe despite long OAuth URLs', async () => {
+  const finalUrl =
+    'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=00000000-0000-0000-0000-000000000000&redirect_uri=https%3A%2F%2Fsdccd.instructure.com%2Flogin%2Fcanvas&response_type=code&scope=openid%20profile%20email&state=' +
+    'x'.repeat(180);
+  const r = await analyzeUrl(
+    'https://sdccd.instructure.com/',
+    { fetch: true },
+    {
+      ...fixedDeps,
+      fetchImpl: fakeFetch({
+        finalUrl,
+        redirects: [{ url: 'https://sdccd.instructure.com/', status: 302, location: finalUrl }],
+        contentType: 'text/html',
+        bodyText: '<html><head><meta http-equiv="refresh" content="0; url=https://login.microsoftonline.com/jsdisabled"></head></html>',
+      }),
+    },
+  );
+
+  assert.equal(r.verdict, 'safe');
+  assert.ok(r.signals.some((s) => s.id === 'net.trusted_sso_redirect' && s.mitigates));
+  assert.ok(!r.signals.some((s) => s.id === 'net.cross_domain_redirect'));
+  assert.ok(!r.signals.some((s) => s.id === 'content.meta_refresh'));
+  assert.ok(!r.signals.some((s) => s.id === 'url.long'));
+  assert.ok(!r.signals.some((s) => s.id === 'url.open_redirect'));
+});
+
+test('untrusted redirects to a Microsoft login URL are still treated cautiously', async () => {
+  const finalUrl =
+    'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=00000000-0000-0000-0000-000000000000&redirect_uri=https%3A%2F%2Fevil.example%2Fcallback&response_type=code&scope=openid%20profile&state=' +
+    'x'.repeat(180);
+  const r = await analyzeUrl(
+    'https://evil.example/start',
+    { fetch: true },
+    { ...fixedDeps, fetchImpl: fakeFetch({ finalUrl, redirects: [{ url: 'https://evil.example/start', status: 302, location: finalUrl }] }) },
+  );
+
+  assert.equal(r.verdict, 'suspicious');
+  assert.ok(r.signals.some((s) => s.id === 'net.cross_domain_redirect'));
+  assert.ok(r.signals.some((s) => s.id === 'url.open_redirect'));
+});
+
 test('invalid URL rejects with InvalidUrlError', async () => {
   await assert.rejects(() => analyzeUrl('http://', {}, fixedDeps), InvalidUrlError);
 });
