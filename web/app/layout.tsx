@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   title: 'argus - url & file threat scanner',
   description: 'Paste a link or drop a file for a Safe / Suspicious / Malicious verdict. Hostile input is never opened.',
   icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
+    icon: '/icon.png',
+    shortcut: '/icon.png',
     apple: '/apple-icon.png',
   },
 };
