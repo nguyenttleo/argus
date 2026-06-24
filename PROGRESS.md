@@ -131,7 +131,7 @@ backend URL hidden. The web app keeps its own copy of the API types (the boundar
   plain-English summary, per-signal breakdown (severity dot + weight + explanation),
   "Why this verdict" vs "Technical details" tabs, IOC chips.
 - **`components/Sidebar.tsx`** - live stats + recent-scan history; click a row → modal report.
-- **Live browser-verified (Claude Preview):** phishing URL → MALICIOUS 92 with full signal
+- **Live browser-verified:** phishing URL → MALICIOUS 92 with full signal
   breakdown incl. live SSRF-guard NXDOMAIN handling; EICAR file → MALICIOUS 97 with correct
   sha256 + YARA badge; Technical-details tab; history modal; mobile (375px) layout; 0 console
   errors.
@@ -223,4 +223,3 @@ npm run demo                       # CLI safe demo
 npm run seed && npm run server     # REST API :8089
 npm run web:install && npm run web # dashboard :3001
 ```
-

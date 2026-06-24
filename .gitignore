@@ -33,7 +33,6 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
-.claude/
 
 # test artifacts
 coverage/

@@ -1,214 +1,201 @@
-# Argus - URL & File Threat Scanner
+# Argus
 
-> An all-seeing **“is this safe?”** scanner. Paste a suspicious **URL** to get a phishing-risk
-> report, or drop a **file** to scan it for malware. Defensive by design - Argus treats every
-> input as hostile, **never executes uploads on the host**, and fetches URLs only through an
-> anti-SSRF sandbox.
+Argus is a self-hosted URL and file threat scanner. I built it around one practical question:
 
-Argus answers one question for non-experts and SOC analysts alike: *should I trust this?* It
-fuses lexical heuristics, real signature/YARA detection, and reputation intelligence into a single
-**Safe / Suspicious / Malicious** verdict - always with a transparent, explainable breakdown of
-*why*. Two surfaces (URL analysis, file scanning) share one scoring & report engine.
+> Should I trust this?
 
-Part of a four-project security suite: **Tartarus** (sandbox) · **Labyrinth** (CTF) ·
-**Siren** (honeypot) · **Argus** (this - the defensive counterpart).
+Paste a suspicious URL or upload a file and Argus returns a clear verdict: `safe`, `suspicious`, or
+`malicious`. The report includes the score, the evidence behind the score, extracted IOCs, and the
+details that matter for follow-up.
 
----
+The scanner is defensive by default. It does not execute uploaded files, and URL fetching is routed
+through an SSRF guard before any network request is made.
 
-## Highlights
+## What It Does
 
-- 🛡️ **The hard part, solved well - safely handling hostile input.** A from-scratch
-  [SSRF guard](packages/engine/src/url/ssrf.ts) resolves DNS first, blocks every private /
-  loopback / link-local / reserved range (including the `169.254.169.254` cloud-metadata
-  endpoint), and **pins the socket to the vetted IP** so DNS can’t be rebound between check and
-  connect. Redirects are re-guarded on every hop.
-- 🧬 **Real detection, no magic binaries.** A [YARA-subset engine](packages/engine/src/file/yara.ts)
-  written in TypeScript parses real `.yar` rules (text/hex/regex strings, `N of them`,
-  `uint16(0)==0x5A4D`, `filesize`, boolean conditions) - no native libyara. Plus magic-byte type
-  detection, Office/PDF/PE static analysis, a zip-bomb guard, and EICAR detection.
-- 🧮 **Explainable, deterministic scoring.** Verdicts are never bare labels - they’re the
-  [noisy-OR combination](packages/shared/src/scoring.ts) of weighted `Signal`s, and the full
-  breakdown travels with every verdict. Same input → same verdict, every time.
-- 🔌 **Works fully offline.** Reputation providers (Safe Browsing, URLhaus, VirusTotal-by-hash)
-  are pluggable and degrade gracefully to “unavailable” without API keys - the heuristic +
-  signature engine stands on its own.
-- 🖥️ **Three surfaces, one engine:** a polished Next.js web app, a REST API, and a CLI all share
-  the exact same analysis code.
+- Scans URLs with lexical checks, DNS checks, TLS inspection, safe fetching, page-content signals,
+  and optional reputation lookups.
+- Scans files with hashing, magic-byte detection, extension mismatch checks, entropy, YARA-style
+  rules, static document analysis, PE analysis, and optional hash reputation.
+- Produces deterministic reports with weighted signals instead of a bare label.
+- Works offline when API keys are missing, then adds reputation data when keys are available.
+- Shares the same scanning engine across the web app, REST API, and CLI.
 
----
+## Quick Start
 
-## Quick start
+Requirements:
 
-Requirements: **Node ≥ 24** (uses built-in `node:sqlite`, the native test runner, and TypeScript
-type-stripping - there is no build step for the backend).
+- Node.js `>=24`
+- npm
 
 ```bash
-npm install            # install workspace deps
-npm test               # 131 tests (node:test) - engines, scoring, server, CLI
+npm install
+npm test
 
-# CLI - self-contained, no server needed
-npm run demo                                   # benign URL + phishing URL + EICAR
+# CLI, no server needed
+npm run demo
 node packages/cli/src/cli.ts url https://example.com
 node packages/cli/src/cli.ts file ./some-file
 
-# Full stack (API + web dashboard)
-npm run seed           # optional: load demo scans for the dashboard
-npm run server         # REST API on http://127.0.0.1:8089
-npm run web:install    # one-time: install the web app's deps
-npm run web            # dashboard on http://localhost:3001
+# Full stack
+npm run seed
+npm run server
+npm run web:install
+npm run web
 ```
 
-Then open the dashboard and click a **safe demo** button (benign URL · phishing URL · EICAR test
-file) for an instant, risk-free, explainable verdict.
+Local services:
 
----
+- API: `http://127.0.0.1:8089`
+- Web app: `http://localhost:3001`
 
-## Architecture
+The demo command runs a benign URL, a phishing-style URL, and the EICAR test file so the report flow
+can be checked without using a live sample.
 
-```
-              ┌──────────────────────────────────────────────┐
- user ───────▶│  Next.js web app  (URL box · dropzone · report)│
-              └───────────────┬──────────────────────────────┘
-                              │  same-origin /api/* proxy (no CORS)
-                       ┌──────▼───────┐
-                       │  REST API     │  Fastify · validate · rate-limit · persist
-                       │  (@argus/server)
-                       └──┬────────┬──┘
-                url job   │        │  file job          ┌── CLI (@argus/cli) ──┐
-          ┌───────────────▼──┐  ┌──▼───────────────┐    │ shares the same engine│
-          │ URL analyzer      │  │ File analyzer     │◀──┘
-          │ lexical + SSRF-   │  │ hash · magic ·    │
-          │ safe fetch + TLS  │  │ YARA · static     │
-          └───────┬──────────┘  └────────┬──────────┘
-                  │ reputation            │ hash reputation / (opt) detonate
-          ┌───────▼──────────┐    ┌───────▼─────────┐
-          │ Safe Browsing /   │    │ VirusTotal /     │
-          │ URLhaus / local   │    │ Tartarus (v3)    │
-          └──────────────────┘    └─────────────────┘
-                       ┌────────────────────────────┐
-                       │ scoring engine (@argus/shared) │──▶ SQLite (scans, IOCs)
-                       └────────────────────────────┘     + encrypted quarantine
-```
+## Repository Layout
 
-**Monorepo** (npm workspaces, TypeScript, ESM, no build step):
-
-| Package | Role |
+| Path | Purpose |
 | --- | --- |
-| [`@argus/shared`](packages/shared) | Types + the deterministic noisy-OR scoring engine |
-| [`@argus/engine`](packages/engine) | URL & file analysis: SSRF guard, fetcher, lexical heuristics, YARA-subset, static analysis, reputation providers |
-| [`@argus/server`](packages/server) | Fastify REST API · SQLite persistence · encrypted quarantine · rate limiting |
-| [`@argus/cli`](packages/cli) | `argus url` / `argus file` with an explainable terminal report |
-| [`web`](web) | Standalone Next.js 16 dashboard (App Router, React 19, Tailwind v4) |
+| `packages/shared` | Shared types and the scoring engine |
+| `packages/engine` | URL analysis, file analysis, YARA-style rules, static analysis, and reputation providers |
+| `packages/server` | Fastify API, SQLite persistence, scan history, quarantine, and rate limiting |
+| `packages/cli` | Terminal interface for URL, file, and demo scans |
+| `web` | Next.js dashboard for submitting scans and reading reports |
+| `scripts` | Production start, smoke test, and helper scripts |
+| `docs` | Deployment notes |
 
-> **Why TypeScript/Node, not the Go stack the spec sketches?** Go/Docker/ClamAV/YARA aren’t
-> installed on the target machine; Node is the only runnable backend (the sibling projects made the
-> same call). The consequence is a feature, not a compromise: the detection engines are **real,
-> readable TypeScript** rather than shell-outs to absent binaries.
+## How Scanning Works
 
----
+1. Input is normalized and validated.
+2. URL scans run lexical checks first, then guarded DNS and fetch checks when enabled.
+3. File scans hash the upload, detect type, inspect static structure, and run local rules.
+4. Optional reputation providers add outside context when keys are configured.
+5. Signals are weighted and combined into a final score and verdict.
+6. The final report is returned through the CLI, API, or dashboard.
 
-## Security model (the heart of the project)
+Reports include:
 
-| Threat | Mitigation |
+- Verdict and 0-100 score
+- Confidence level
+- Short summary
+- Signal breakdown with severity, weight, and explanation
+- Extracted IOCs
+- URL-specific or file-specific detail blocks
+
+## Security Model
+
+| Risk | Argus behavior |
 | --- | --- |
-| **Executing malware on the host** | Files are **never executed** - only hashed, magic/YARA/static-scanned. Behavioural detonation happens only inside **Tartarus**, opt-in. |
-| **SSRF via the URL fetcher** | DNS resolved first; **all** private/reserved/loopback/link-local ranges blocked (incl. `169.254.169.254`, IPv4-mapped IPv6, NAT64); socket **pinned** to the vetted IP (anti-rebinding); every redirect re-guarded; http/https only; hard byte/redirect/wall-clock caps. |
-| **Fetching a live malicious page** | Bytes are *read*, never run; invalid TLS is inspected & reported, never trusted. |
-| **Quarantine / leakage** | Uploads (opt-in) stored **AES-256-GCM encrypted**, hash-addressed, short-TTL, swept - and **never re-served** (no download route). Default is hash-only retention. |
-| **Zip bombs / parser DoS** | Argus never decompresses archives; it reads the ZIP central directory and flags extreme ratios / nesting from declared sizes. |
-| **Abuse relay / scan-by-proxy** | Per-IP rate limiting; http/https allowlist; upload size gate. |
-| **Privacy** | Only an **HMAC of the client IP** is stored, never the raw IP. |
+| Uploaded malware runs on the host | Files are hashed and statically inspected, never executed |
+| SSRF through URL scanning | DNS is resolved first, private and reserved ranges are blocked, sockets are pinned to vetted IPs, and redirects are checked again |
+| Malicious web content executes during a scan | Response bytes are read and inspected, not executed in the scanner |
+| Zip bombs or parser abuse | Archives are inspected from declared metadata instead of fully decompressed |
+| Quarantine leakage | Optional quarantine is AES-256-GCM encrypted, hash-addressed, short-lived, and not exposed through a download route |
+| Scan abuse | Upload size limits and per-IP rate limits are enforced |
+| Client privacy | Client IPs are stored as HMAC values, not raw addresses |
 
----
+## URL Analysis
 
-## Capability vs the market
+Argus checks for common URL risk signals, including:
 
-The bar for "is this URL/file safe?": **VirusTotal** (file/URL multi-engine + static analysis),
-**urlscan.io** (deep URL/page analysis), **Google Safe Browsing** (URL reputation). Argus is at
-parity on the analysis it performs and ahead on explainability, privacy and self-hostability.
+- Punycode and suspicious IDN usage
+- IP-literal hosts
+- Credential tricks such as `@` in the authority section
+- Suspicious TLDs and unusual URL length
+- Redirect chains
+- TLS certificate issues
+- DNS, SPF, and DMARC signals
+- Password forms, cross-domain forms, brand impersonation hints, and obfuscated page content
+- Reputation hits from configured providers
 
-**URL analysis**
+The fetcher is designed for hostile input. It blocks private, loopback, link-local, reserved,
+IPv4-mapped IPv6, and cloud metadata ranges before connecting.
 
-| | Argus | VirusTotal | urlscan.io | Safe Browsing |
-| --- | :-: | :-: | :-: | :-: |
-| Lexical/structural heuristics (typosquat, punycode, IDN, `@`-trick, …) | ✅ 19 checks | ◐ | ◐ | ✕ |
-| Reputation feeds (Safe Browsing · URLhaus · pluggable) | ✅ | ✅ | ◐ | ✅ |
-| SSRF-safe fetch + re-guarded redirect chain | ✅ socket-pinned | ✅ | ✅ | ✕ |
-| TLS certificate inspection | ✅ | ◐ | ✅ | ✕ |
-| **Domain age (RDAP/WHOIS)** | ✅ | ✅ | ✅ | ✕ |
-| **DNS · SPF · DMARC** | ✅ | ◐ | ✅ | ✕ |
-| **Page content: password/cross-domain forms, brand impersonation, obfuscation** | ✅ | ◐ | ✅ | ✕ |
-| Headless screenshot | ✕ by design¹ | ✕ | ✅ | ✕ |
-| **Explainable verdict + full signal breakdown** | ✅ unique | ◐ engine list | ◐ | ✕ binary |
+## File Analysis
 
-**File analysis**
+Argus inspects files without running them. Current checks include:
 
-| | Argus | VirusTotal |
-| --- | :-: | :-: |
-| sha256/sha1/md5 · entropy · magic-byte type + extension-mismatch | ✅ | ✅ |
-| YARA | ✅ from-scratch engine | ✅ |
-| **PE: imphash · imports · per-section entropy · Authenticode · packer** | ✅ | ✅ |
-| Office/OLE macro · PDF active-content · zip-bomb guard | ✅ | ◐ |
-| Multi-AV reputation | ✅ via VT-by-hash | ✅ 70+ native |
-| **Malware-family attribution** | ✅ MalwareBazaar | ✅ |
-| Behavioural detonation | ◐ Tartarus (opt-in) | ✅ sandbox |
-| IOC extraction (url/ip/email/**btc/eth/cve/registry/onion**) | ✅ | ✅ |
-
-**Where Argus is ahead:** a deterministic, weighted **signal breakdown** behind every verdict
-(competitors give an engine count or a binary flag); **works fully offline / self-hosted** with zero
-API keys; **privacy** (client IP is HMAC-hashed, no raw-input hoarding); SSRF-safe-by-design fetch;
-one engine driving a **CLI + REST API + web** surface; result caching + concurrent lookups.
-
-**Where it integrates rather than re-implements:** the 70+ native AV engines (reached via VT-by-hash),
-turnkey behavioural sandboxing (delegated to **Tartarus**), and page screenshots (¹deliberately
-omitted - safely rendering attacker JS requires an isolated browser, which is Tartarus's job, not a
-gap in the static analysis Argus does perform).
-
-Net: for the single-input "should I trust this?" question, Argus matches its best competitor on
-analysis depth and exceeds it on explainability, privacy and deployability.
-
----
+- SHA-256, SHA-1, and MD5
+- Magic-byte type detection
+- Extension mismatch detection
+- Entropy checks
+- YARA-style local rules
+- EICAR detection
+- Office and PDF static checks
+- PE imports, sections, imphash, Authenticode metadata, and packer indicators
+- Archive structure checks for extreme compression ratios
+- IOC extraction for URLs, IPs, emails, CVEs, registry paths, cryptocurrency addresses, and onion addresses
 
 ## API
 
-`POST /api/scan/url` - `{ "url": "...", "fetch": true, "reputation": true }` → `Report`
-`POST /api/scan/file` - `multipart/form-data` field `file` → `Report`
-`GET  /api/scan/:id` · `GET /api/scans?limit&offset&kind&verdict` · `GET /api/stats`
-`GET  /api/iocs/:value` (find scans by IOC) · `GET /api/health`
+Start the API:
 
 ```bash
-curl -s localhost:8089/api/scan/url -H 'content-type: application/json' \
-  -d '{"url":"http://paypal.com@secure-paypa1-login.tk/webscr"}' | jq .verdict
-# → "malicious"
+npm run server
 ```
 
-A `Report` carries the `verdict`, 0–100 `score`, `confidence`, a one-line `summary`, the full
-`signals[]` breakdown (each with severity, weight and a plain-English explanation), extracted
-`iocs[]`, and a kind-specific `detail` block.
+Common endpoints:
 
----
+```text
+POST /api/scan/url
+POST /api/scan/file
+GET  /api/scan/:id
+GET  /api/scans?limit&offset&kind&verdict
+GET  /api/stats
+GET  /api/iocs/:value
+GET  /api/health
+```
+
+Example URL scan:
+
+```bash
+curl -s http://127.0.0.1:8089/api/scan/url \
+  -H "content-type: application/json" \
+  -d '{"url":"http://paypal.com@secure-paypa1-login.tk/webscr","fetch":true,"reputation":true}' \
+  | jq .
+```
 
 ## CLI
 
-```
+```text
 argus url  <url>   [--no-fetch] [--no-reputation] [--json]
-argus file <path>  [--no-reputation] [--detonate]    [--json]
+argus file <path>  [--no-reputation] [--detonate] [--json]
 argus demo
-
-Exit codes: 0 safe · 1 suspicious · 2 malicious · 3 error   (pipeline-friendly)
 ```
 
----
+Exit codes:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Safe |
+| `1` | Suspicious |
+| `2` | Malicious |
+| `3` | Error |
 
 ## Configuration
 
-Everything is optional - see [`.env.example`](.env.example). With **no** keys, Argus runs fully
-offline; add `GOOGLE_SAFE_BROWSING_API_KEY`, `VIRUSTOTAL_API_KEY`, `URLHAUS_AUTH_KEY` to light up
-live reputation, and `TARTARUS_URL` for sandboxed detonation.
+All configuration is optional. Copy `.env.example` to `.env` and fill in only the providers or
+runtime settings you need.
 
-## Public hosting
+Useful settings:
 
-Argus now ships with a production entrypoint and Docker deployment files:
+| Variable | Purpose |
+| --- | --- |
+| `GOOGLE_SAFE_BROWSING_API_KEY` | URL reputation |
+| `VIRUSTOTAL_API_KEY` | File hash reputation |
+| `URLHAUS_AUTH_KEY` | URL and malware-family reputation |
+| `ABUSE_CH_AUTH_KEY` | Optional separate abuse.ch key |
+| `ARGUS_DATA_DIR` | SQLite and runtime data directory |
+| `ARGUS_MAX_UPLOAD_BYTES` | File upload limit |
+| `ARGUS_IP_HASH_SECRET` | Secret used before storing client IP hashes |
+| `ARGUS_QUARANTINE` | Enables encrypted quarantine when set to `true` |
+| `ARGUS_API` | API target used by the web proxy |
+
+With no keys, Argus still runs local heuristic, signature, and static-analysis checks.
+
+## Deployment
+
+Production entry points:
 
 ```bash
 npm run verify
@@ -216,41 +203,41 @@ npm start
 npm run smoke
 ```
 
-For public hosting, use the single-container Docker setup in [`Dockerfile`](Dockerfile): the Next.js
-web app listens on the public `PORT`, while the Fastify API stays private on loopback and stores
-SQLite data under `/data`. See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for Render, Docker, env
-vars, persistent storage, and smoke-test instructions.
+The Docker setup runs the public Next.js app and a private Fastify API in one container. The web app
+listens on `PORT`; the API stays on loopback and stores SQLite data under `/data`.
 
----
+See `docs/DEPLOYMENT.md` for Docker, Render, persistent storage, environment variables, and smoke
+test notes.
 
 ## Testing
 
 ```bash
-npm test          # 131 tests across engines, scoring, server (Fastify inject), CLI
-npm run typecheck # strict tsc --noEmit across all packages
-npm run web:build # production Next.js build
+npm test
+npm run typecheck
+npm run web:build
+npm run verify
 ```
 
-The SSRF guard, IP classifier, YARA engine and scoring model are exhaustively unit-tested;
-the server is tested via `fastify.inject()`; the URL fetcher’s read path is tested against a local
-server and verified live against real sites.
+The test suite covers scoring, URL parsing, SSRF filtering, safe fetching, YARA-style rule parsing,
+file analysis, quarantine behavior, API routes, and CLI rendering.
 
-> **A note on test fixtures.** Malicious samples (EICAR, webshells) are assembled at runtime from
-> base64 / string-concatenation so no source file contains a contiguous live signature - otherwise
-> endpoint AV (Windows Defender) quarantines the repo’s own files. This is the same reason real
-> AV/YARA projects ship encoded samples.
+## Status
 
----
+Implemented:
 
-## Roadmap status
+- URL scanner with heuristics, safe fetching, TLS inspection, page-content signals, and reputation hooks
+- File scanner with hashing, static analysis, YARA-style rules, PE checks, and IOC extraction
+- Explainable scoring model
+- Web dashboard
+- REST API
+- CLI
+- SQLite-backed scan history
+- Encrypted quarantine
+- Docker deployment path
 
-- **M1 (MVP)** ✅ URL heuristics + reputation, file upload + SHA-256 + hash reputation + ClamAV-class
-  signature/YARA scan + explainable report (web + API + CLI).
-- **M2** ✅ (mostly) SSRF-safe redirect-chain resolution + TLS inspection; YARA + macro/PE/PDF static
-  analysis; history + IOC search.
-- **M3** ◐ Tartarus detonation hook + REST API/CLI shipped; ML scoring & browser extension are future work.
+Planned:
 
----
-
-*Argus is a portfolio project - a defensive counterpart to offensive/AppSec work that visibly
-solves the genuinely hard part: safely handling hostile input.*
+- Additional reputation providers
+- More document-format checks
+- Browser extension
+- Stronger scan-history filtering and export tools
