@@ -83,7 +83,7 @@ test('cross-domain redirect re-analyzes the final URL', async () => {
     { ...fixedDeps, fetchImpl: fakeFetch({ finalUrl: 'http://paypa1.com/login', redirects: [{ url: 'https://bit.ly/abc', status: 302, location: 'http://paypa1.com/login' }] }) },
   );
   assert.ok(r.signals.some((s) => s.id === 'net.cross_domain_redirect'));
-  // the typosquat on the *final* domain should now be present (paypa1 ≈ paypal)
+
   assert.ok(r.signals.some((s) => s.id === 'url.typosquat'));
   assert.equal(r.verdict, 'malicious');
 });

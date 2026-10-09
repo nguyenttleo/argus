@@ -1,10 +1,7 @@
 import type { ReputationResult } from '@argus/shared';
 import { fetchJson, unavailable, type ReputationProvider } from './provider.ts';
 
-/**
- * VirusTotal v3 **hash** lookup. By design Argus only ever sends a SHA-256, never
- * the file itself - known-bad samples are recognised without uploading anything.
- */
+
 const ENDPOINT = 'https://www.virustotal.com/api/v3/files/';
 
 interface VtResponse {

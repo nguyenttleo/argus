@@ -1,19 +1,4 @@
-/**
- * SSRF guard - the safety heart of URL analysis.
- *
- * Before Argus ever opens a socket to a submitted URL it must prove the
- * destination is a publicly-routable host. The guard:
- *   1. rejects non-http(s) schemes outright;
- *   2. resolves the hostname to *every* A/AAAA address;
- *   3. refuses if ANY resolved address is private/loopback/link-local/reserved
- *      (so a name that resolves to both a public and an internal IP is still
- *      blocked - defeats "0.0.0.0" / split-horizon / partial-rebinding tricks);
- *   4. returns the vetted IP to **pin** the connection to, so the socket can't be
- *      re-pointed at an internal address between resolution and connect (TOCTOU /
- *      DNS-rebinding).
- *
- * The DNS resolver is injectable so the decision logic is unit-testable offline.
- */
+
 
 import dnsPromises from 'node:dns/promises';
 import { classifyIp, isIpLiteral } from './ip.ts';
@@ -35,11 +20,11 @@ export interface GuardDecision {
   allowed: boolean;
   host: string;
   resolvedIps: string[];
-  /** Vetted IP the caller should pin the socket to (anti-rebinding). */
+
   pinnedIp?: string;
   pinnedFamily?: 4 | 6;
   reason: string;
-  /** When blocked: the offending category (loopback/private/…). */
+
   category?: string;
 }
 
@@ -48,7 +33,7 @@ const defaultResolver: Resolver = async (host) => {
   return addrs.map((a) => ({ address: a.address, family: a.family }));
 };
 
-/** Hostnames we refuse without even resolving (defense in depth). */
+
 const BLOCKED_NAMES = new Set(['localhost', 'localhost.localdomain', 'ip6-localhost', 'ip6-loopback']);
 
 export async function guardHost(host: string, resolver: Resolver = defaultResolver): Promise<GuardDecision> {
@@ -64,7 +49,7 @@ export async function guardHost(host: string, resolver: Resolver = defaultResolv
     return { allowed: false, host, resolvedIps: [], reason: `refused: "${host}" is an internal-only domain`, category: 'internal-tld' };
   }
 
-  // IP literal - classify directly, no DNS.
+
   if (isIpLiteral(host)) {
     const c = classifyIp(host);
     if (!c.public) {
@@ -80,7 +65,7 @@ export async function guardHost(host: string, resolver: Resolver = defaultResolv
     };
   }
 
-  // DNS name - resolve and vet every address.
+
   let addrs: ResolvedAddr[];
   try {
     addrs = await resolver(host);

@@ -1,4 +1,4 @@
-/** Tiny TTL cache so we don't burn provider quota re-checking the same target. */
+
 export class TtlCache<V> {
   #map = new Map<string, { value: V; expires: number }>();
   #now: () => number;
@@ -21,7 +21,7 @@ export class TtlCache<V> {
 
   set(key: string, value: V, ttlMs: number): void {
     if (this.#map.size >= this.#max) {
-      // drop oldest insertion (Map preserves insertion order)
+
       const first = this.#map.keys().next().value;
       if (first !== undefined) this.#map.delete(first);
     }

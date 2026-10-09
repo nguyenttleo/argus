@@ -6,14 +6,14 @@ const fixedDeps = { now: () => new Date('2026-01-01T00:00:00Z'), idGen: () => 'f
 const EICAR = 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
 const enc = (s: string) => new TextEncoder().encode(s);
 
-/** Build a minimal valid ZIP (one stored empty entry) for the macro/zip tests. */
+
 function makeZip(name: string, uncompSize = 0, compSize = 0): Uint8Array {
   const nameBytes = enc(name);
   const N = nameBytes.length;
   const local = Buffer.alloc(30 + N);
   local.writeUInt32LE(0x04034b50, 0);
   local.writeUInt16LE(20, 4);
-  local.writeUInt16LE(0, 8); // stored
+  local.writeUInt16LE(0, 8);
   local.writeUInt32LE(compSize, 18);
   local.writeUInt32LE(uncompSize, 22);
   local.writeUInt16LE(N, 26);
@@ -26,7 +26,7 @@ function makeZip(name: string, uncompSize = 0, compSize = 0): Uint8Array {
   cd.writeUInt32LE(compSize, 20);
   cd.writeUInt32LE(uncompSize, 24);
   cd.writeUInt16LE(N, 28);
-  cd.writeUInt32LE(0, 42); // local header offset
+  cd.writeUInt32LE(0, 42);
   Buffer.from(nameBytes).copy(cd, 46);
 
   const eocd = Buffer.alloc(22);
@@ -48,7 +48,7 @@ test('EICAR is detected and decisively malicious', async () => {
     assert.equal(r.detail.sha256, '275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f');
     assert.ok(r.detail.yaraHits.some((h) => h.rule === 'EICAR_Test_File'));
   }
-  // local-feed hash hit corroborates
+
   assert.ok(r.signals.some((s) => s.id.startsWith('rep.')));
   assert.match(r.summary, /Do not open/);
 });
@@ -60,7 +60,7 @@ test('benign text file is safe', async () => {
 });
 
 test('executable disguised as a PDF is flagged (magic mismatch)', async () => {
-  // 'MZ' + a tiny fake PE just enough for masquerade signal
+
   const bytes = new Uint8Array([0x4d, 0x5a, ...enc('this is really a windows executable not a pdf')]);
   const r = await analyzeFile({ filename: 'invoice.pdf', bytes }, {}, fixedDeps);
   assert.ok(r.signals.some((s) => s.id === 'file.exe_masquerade'), `signals: ${r.signals.map((s) => s.id)}`);
@@ -69,11 +69,11 @@ test('executable disguised as a PDF is flagged (magic mismatch)', async () => {
 });
 
 test('a PE with process-injection imports trips the YARA rule', async () => {
-  // Construct a buffer with a valid-enough PE header so uint16(0)==0x5A4D and a PE sig.
+
   const head = Buffer.alloc(0x80);
-  head.writeUInt16LE(0x5a4d, 0); // MZ
-  head.writeUInt32LE(0x40, 0x3c); // e_lfanew → 0x40
-  head.writeUInt32LE(0x00004550, 0x40); // 'PE\0\0'
+  head.writeUInt16LE(0x5a4d, 0);
+  head.writeUInt32LE(0x40, 0x3c);
+  head.writeUInt32LE(0x00004550, 0x40);
   const body = enc('....VirtualAllocEx....WriteProcessMemory....CreateRemoteThread....');
   const r = await analyzeFile({ filename: 'sample.exe', bytes: new Uint8Array(Buffer.concat([head, Buffer.from(body)])) }, {}, fixedDeps);
   assert.ok(r.signals.some((s) => s.id === 'yara.Suspicious_PE_Imports'));
@@ -95,7 +95,7 @@ test('OOXML with vbaProject.bin is detected as a macro document', async () => {
 });
 
 test('zip bomb ratio is flagged', async () => {
-  // declare huge uncompressed vs tiny compressed
+
   const zip = makeZip('big.bin', 200 * 1024 * 1024, 1024);
   const r = await analyzeFile({ filename: 'archive.zip', bytes: zip }, {}, fixedDeps);
   assert.ok(r.signals.some((s) => s.id === 'static.zip_bomb'), `signals: ${r.signals.map((s) => s.id)}`);
@@ -127,10 +127,10 @@ test('detonation hook is invoked only when opted in + configured', async () => {
     called++;
     return { available: true, ran: true, source: 'tartarus' as const, detail: 'ran', iocs: [{ type: 'domain' as const, value: 'c2.evil.test' }] };
   };
-  // not configured → not called
+
   await analyzeFile({ filename: 'a.py', bytes: enc('print(1)') }, { detonate: true }, { ...fixedDeps, detonate });
   assert.equal(called, 0, 'should not detonate without TARTARUS_URL');
-  // configured → called, IOC surfaces
+
   const r = await analyzeFile(
     { filename: 'a.py', bytes: enc('import os') },
     { detonate: true },

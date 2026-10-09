@@ -20,9 +20,7 @@ export default function Recent({
   const load = useCallback(async () => {
     try {
       setScans(await getScans(8));
-    } catch {
-      /* api may be offline */
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -52,9 +50,7 @@ export default function Recent({
                 try {
                   setLoadingId(s.id);
                   onSelect(await getReport(s.id));
-                } catch {
-                  /* ignore */
-                } finally {
+                } catch {} finally {
                   setLoadingId(null);
                 }
               }}

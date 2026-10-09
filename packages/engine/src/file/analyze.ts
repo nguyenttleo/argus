@@ -1,12 +1,4 @@
-/**
- * File analysis orchestrator. Fuses every file signal source into one {@link Report}:
- *   hashing + entropy → magic-byte type & extension-mismatch → YARA → static analysis
- *   → hash reputation (VirusTotal-by-hash + local feed) → optional Tartarus detonation.
- *
- * THE FILE IS NEVER EXECUTED on the host. Every check is read-only byte inspection;
- * the only place a sample can "run" is inside the isolated Tartarus sandbox, and only
- * when explicitly opted into.
- */
+
 
 import { randomUUID } from 'node:crypto';
 import {
@@ -33,7 +25,7 @@ import { tartarusDetonate } from './detonate.ts';
 export interface AnalyzeFileInput {
   filename: string;
   bytes: Uint8Array;
-  /** client-declared MIME, if any */
+
   declaredType?: string;
 }
 
@@ -106,7 +98,7 @@ export async function analyzeFile(
     });
   }
 
-  // ── magic-byte / extension mismatch ──
+
   if (mismatch.executableMasquerade) {
     signals.push({
       id: 'file.exe_masquerade',
@@ -131,7 +123,7 @@ export async function analyzeFile(
     });
   }
 
-  // ── entropy ──
+
   if (entropy > HIGH_ENTROPY && !(detected && NATURALLY_HIGH_ENTROPY.has(detected.family)) && bytes.length > 256) {
     signals.push({
       id: 'file.high_entropy',
@@ -145,7 +137,7 @@ export async function analyzeFile(
     });
   }
 
-  // ── YARA ──
+
   const rules = deps.rules ?? loadBuiltinRules().rules;
   const yaraMatches = scanBytes(bytes, rules);
   detail.yaraHits = yaraMatches.map((m) => ({
@@ -170,7 +162,7 @@ export async function analyzeFile(
     });
   }
 
-  // ── static analysis ──
+
   const stat = analyzeStatic(bytes, input.filename, detected);
   detail.staticFindings = stat.findings;
   if (stat.pe) {
@@ -180,7 +172,7 @@ export async function analyzeFile(
   signals.push(...stat.signals);
   for (const ic of stat.iocs) iocs.push(ic);
 
-  // ── hash reputation ──
+
   let repResults: ReputationResult[];
   if (options.reputation) {
     const registry = deps.registry ?? createReputationRegistry(config);
@@ -219,7 +211,7 @@ export async function analyzeFile(
     });
   }
 
-  // ── optional sandboxed detonation (Tartarus) ──
+
   const detonateFn = deps.detonate ?? tartarusDetonate;
   if (options.detonate && config.tartarusUrl) {
     try {

@@ -1,11 +1,4 @@
-/**
- * Argus REST API (Fastify). Validates + rate-limits input, runs the shared analysis
- * engines, persists results to SQLite, and (optionally) quarantines uploaded bytes.
- *
- * The server is the trust boundary: it treats every input as hostile, never executes
- * uploads, fetches URLs only through the SSRF-safe fetcher, and never re-serves a
- * quarantined sample.
- */
+
 
 import { createHmac } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
@@ -37,15 +30,15 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
 
   const app = Fastify({
     logger: false,
-    bodyLimit: 1 * 1024 * 1024, // JSON body cap (file uploads go through multipart)
+    bodyLimit: 1 * 1024 * 1024,
     trustProxy: true,
   });
 
   const db = deps.db ?? new ArgusDb(config.dbPath);
   const registry = createReputationRegistry(config);
   const rules = loadBuiltinRules().rules;
-  // Full-scan result cache: an identical request within the TTL returns instantly
-  // instead of re-fetching/re-hashing (efficiency). Bypass with `fresh: true`.
+
+
   const scanCache = new TtlCache<Report>();
   const quarantine =
     deps.quarantine !== undefined
@@ -61,22 +54,20 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
   const hashIp = (ip: string): string =>
     createHmac('sha256', config.ipHashSecret).update(ip).digest('hex').slice(0, 32);
 
-  // Periodic TTL sweep of the quarantine bucket.
+
   if (quarantine) {
     const timer = setInterval(() => {
       try {
         quarantine.sweep();
-      } catch {
-        /* best-effort */
-      }
+      } catch {}
     }, 60 * 60 * 1000);
     timer.unref();
     app.addHook('onClose', async () => clearInterval(timer));
   }
 
   await app.register(cors, { origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(',') });
-  // throwFileSizeLimit:false → an oversize upload yields a truncated buffer with
-  // `file.truncated === true` (handled as a clean 413) instead of throwing.
+
+
   await app.register(multipart, {
     limits: { fileSize: config.maxUploadBytes, files: 1 },
     throwFileSizeLimit: false,
@@ -104,7 +95,7 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
     });
   });
 
-  // ── health / index ──
+
   app.get('/api/health', async () => ({
     status: 'ok',
     service: 'argus',
@@ -127,7 +118,7 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
     ],
   }));
 
-  // ── URL scan ──
+
   app.post('/api/scan/url', { preHandler: scanRateLimit }, async (req, reply) => {
     const body = (req.body ?? {}) as { url?: unknown; fetch?: unknown; reputation?: unknown; fresh?: unknown };
     if (typeof body.url !== 'string' || body.url.trim() === '') {
@@ -159,7 +150,7 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
     return report;
   });
 
-  // ── File scan ──
+
   app.post('/api/scan/file', { preHandler: scanRateLimit }, async (req, reply) => {
     let data;
     try {
@@ -199,13 +190,11 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
       { config, registry, rules },
     );
 
-    // Encrypted, hash-addressed quarantine (opt-in); never re-served.
+
     if (quarantine) {
       try {
         quarantine.store(bytesU8, sha256);
-      } catch {
-        /* quarantine is best-effort; never block a scan on it */
-      }
+      } catch {}
     }
 
     scanCache.set(cacheKey, report, config.scanCacheTtlMs);
@@ -213,7 +202,7 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
     return report;
   });
 
-  // ── history / detail / stats / ioc search ──
+
   app.get('/api/scan/:id', async (req, reply) => {
     const { id } = req.params as { id: string };
     const report = db.getReport(id);

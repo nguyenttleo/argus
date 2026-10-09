@@ -14,7 +14,7 @@ test('levenshtein basic distances', () => {
 });
 
 test('skeleton de-confuses look-alike characters', () => {
-  assert.equal(skeleton('pаypal'.normalize()), 'paypal'); // contains Cyrillic а
+  assert.equal(skeleton('pаypal'.normalize()), 'paypal');
   assert.equal(skeleton('g00gle'), 'google');
   assert.equal(skeleton('micros0ft'), 'microsoft');
 });
@@ -31,7 +31,7 @@ test('@-in-url credential trick is flagged high', () => {
   const s = sigs.signals.find((x) => x.id === 'url.userinfo');
   assert.ok(s);
   assert.equal(s!.severity, 'high');
-  // real host is the part AFTER the @
+
   assert.equal(sigs.parsed.host, 'evil.example.tk');
 });
 
@@ -70,14 +70,14 @@ test('open-redirect parameter carrying a URL is flagged', () => {
 });
 
 test('punycode homograph (аpple via Cyrillic) is flagged', () => {
-  // xn--pple-43d.com is "аpple.com" with a Cyrillic а
+
   const list = ids('http://xn--pple-43d.com/');
   assert.ok(list.includes('url.punycode'), `got ${list.join(',')}`);
 });
 
 test('a realistic phishing URL scores malicious end-to-end', async () => {
   const { signals } = analyzeLexical('http://paypal.com@secure-paypa1-login.tk/webscr?cmd=update');
-  // combine via the shared scorer
+
   const { scoreSignals } = await import('@argus/shared');
   const r = scoreSignals(signals);
   assert.equal(r.verdict, 'malicious', `score ${r.score}`);

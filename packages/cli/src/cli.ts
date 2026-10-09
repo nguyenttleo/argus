@@ -1,10 +1,5 @@
 #!/usr/bin/env node
-/**
- * Argus CLI - `argus url <url>` / `argus file <path>`.
- * Shares the exact same engine as the server, runs fully self-contained (no server
- * needed), prints an explainable report, and exits with a verdict-based code
- * (0 safe · 1 suspicious · 2 malicious) for pipeline use.
- */
+
 
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';

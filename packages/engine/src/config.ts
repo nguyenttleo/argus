@@ -1,23 +1,18 @@
-/**
- * Engine configuration, read from the environment. Everything here is optional:
- * with zero keys set, Argus runs fully offline on its heuristic + signature
- * engines, and every key-gated provider reports itself as "unavailable" rather
- * than failing the scan.
- */
+
 
 export interface EngineConfig {
   googleSafeBrowsingKey?: string;
   virusTotalKey?: string;
   phishTankKey?: string;
-  /** abuse.ch now gates the URLhaus API behind a free Auth-Key. */
+
   urlhausAuthKey?: string;
-  /** Same free abuse.ch Auth-Key, used for the MalwareBazaar hash API. */
+
   abuseChAuthKey?: string;
-  /** Per-provider network timeout. */
+
   reputationTimeoutMs: number;
-  /** Optional Tartarus gateway for behavioural detonation (v3). */
+
   tartarusUrl?: string;
-  /** Wall-clock budget for fetching/redirect resolution. */
+
   fetchTimeoutMs: number;
   maxFetchBytes: number;
 }

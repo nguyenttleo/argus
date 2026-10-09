@@ -1,5 +1,5 @@
-// The Argus API JSON contract, as the web app sees it. Kept in sync with
-// @argus/shared by hand (the boundary between them is HTTP/JSON, not imports).
+
+
 
 export type Verdict = 'safe' | 'suspicious' | 'malicious';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';

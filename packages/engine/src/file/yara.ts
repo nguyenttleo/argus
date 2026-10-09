@@ -1,31 +1,18 @@
-/**
- * A pragmatic **YARA-subset** engine, implemented from scratch in TypeScript.
- *
- * It parses real `.yar` rule files and matches them against file bytes - no native
- * libyara dependency. Supported on purpose (the 90% of real rules):
- *   strings:   "text" (nocase/wide/ascii/fullword), { 4D 5A ?? 90 [2-4] FF } hex
- *              with ?? wildcards and [n]/[n-m] jumps, and /regex/ (nocase).
- *   condition: $a · #a · @a · "$a at <expr>", any/all/N "of them"/"of (set)" with
- *              $prefix* wildcards, and/or/not, ==,!=,<,<=,>,>=, +,-,*,%,
- *              filesize, uint8/16/32 + int8/16/32 (LE), parentheses, 0x-hex, KB/MB.
- *
- * Anything it can't parse is skipped with a recorded error rather than throwing -
- * a malformed rule must never break a scan.  Files are only *read*, never executed.
- */
 
-// ── Rule model ───────────────────────────────────────────────────────────────
+
+
 
 export interface YaraStringDef {
-  id: string; // includes leading $
+  id: string;
   kind: 'text' | 'hex' | 'regex';
   source: string;
   nocase: boolean;
   wide: boolean;
   ascii: boolean;
   fullword: boolean;
-  /** compiled hex pattern parts (for kind==='hex') */
+
   hex?: HexPart[];
-  /** compiled regex (for kind==='regex') */
+
   re?: RegExp;
 }
 
@@ -44,7 +31,7 @@ export interface YaraMatch {
   rule: string;
   tags: string[];
   meta: Record<string, string | number | boolean>;
-  strings: string[]; // ids of strings that matched
+  strings: string[];
 }
 
 export interface ParseResult {
@@ -52,14 +39,9 @@ export interface ParseResult {
   errors: string[];
 }
 
-// ── Rule-file parser (sections) ──────────────────────────────────────────────
 
-/**
- * Strip `//` and `/* … *​/` comments WITHOUT touching `//` or `/*` that live inside
- * string literals (e.g. an `https://…` URL in a meta field) or `/regex/` literals.
- * A naive regex-based stripper mangles URLs and unbalances quotes - which then
- * breaks brace matching. So we scan character by character.
- */
+
+
 function stripComments(src: string): string {
   let out = '';
   let i = 0;
@@ -80,7 +62,7 @@ function stripComments(src: string): string {
         }
       }
       if (i < src.length) {
-        out += src[i]; // closing quote
+        out += src[i];
         i++;
       }
       continue;
@@ -96,7 +78,7 @@ function stripComments(src: string): string {
       continue;
     }
     if (c === '/') {
-      // regex literal - copy verbatim to the closing slash (single line)
+
       out += c;
       i++;
       while (i < src.length && src[i] !== '/' && src[i] !== '\n') {
@@ -147,12 +129,7 @@ export function parseYaraRules(input: string): ParseResult {
   return { rules, errors };
 }
 
-/**
- * Find the `}` matching the `{` at `openIdx`, skipping braces that live inside
- * double-quoted string literals or `/regex/` literals - both of which can legally
- * contain unbalanced braces (e.g. the EICAR string's `}`, or a regex `{2,4}`).
- * Hex blocks use real, balanced braces and are counted normally.
- */
+
 function matchBrace(src: string, openIdx: number): number {
   let depth = 0;
   let i = openIdx;
@@ -168,7 +145,7 @@ function matchBrace(src: string, openIdx: number): number {
       continue;
     }
     if (c === '/') {
-      // regex literal - skip to the closing slash (single-line)
+
       i++;
       while (i < src.length && src[i] !== '/' && src[i] !== '\n') {
         if (src[i] === '\\') i++;
@@ -254,7 +231,7 @@ function parseHex(src: string): HexPart[] {
   const tokens = src.trim().split(/\s+/).filter(Boolean);
   for (const tRaw of tokens) {
     let t = tRaw;
-    // jumps like [2], [2-4], [-]
+
     const jump = /^\[(\d*)(?:-(\d*))?\]$/.exec(t);
     if (jump) {
       flush();
@@ -263,7 +240,7 @@ function parseHex(src: string): HexPart[] {
       parts.push({ kind: 'jump', min, max });
       continue;
     }
-    // a token may itself be multiple byte specs glued (e.g. "4D5A"); split into pairs
+
     while (t.length >= 2) {
       const pair = t.slice(0, 2);
       t = t.slice(2);
@@ -280,16 +257,16 @@ function parseHex(src: string): HexPart[] {
   return parts;
 }
 
-// ── Condition: tokenizer + Pratt parser ──────────────────────────────────────
+
 
 type Node =
   | { t: 'num'; v: number }
-  | { t: 'str'; id: string } // $a  → bool count>0
-  | { t: 'count'; id: string } // #a
-  | { t: 'offset'; id: string } // @a → first offset
-  | { t: 'at'; id: string; expr: Node } // $a at <expr>
-  | { t: 'ident'; name: string } // filesize
-  | { t: 'call'; name: string; arg: Node } // uint16(expr)
+  | { t: 'str'; id: string }
+  | { t: 'count'; id: string }
+  | { t: 'offset'; id: string }
+  | { t: 'at'; id: string; expr: Node }
+  | { t: 'ident'; name: string }
+  | { t: 'call'; name: string; arg: Node }
   | { t: 'unary'; op: string; e: Node }
   | { t: 'bin'; op: string; l: Node; r: Node }
   | { t: 'of'; quant: { kind: 'any' | 'all' | 'num'; n?: number }; set: { them: true } | { ids: string[] } };
@@ -350,7 +327,7 @@ function tokenizeCondition(src: string): Tok[] {
       i = j;
       continue;
     }
-    // multi-char operators
+
     const two = src.slice(i, i + 2);
     if (['==', '!=', '<=', '>='].includes(two)) {
       toks.push({ type: 'op', v: two });
@@ -377,7 +354,7 @@ function parseCondition(src: string): Node {
     if (!t || t.v !== v) throw new Error(`expected "${v}" but got "${t?.v ?? 'EOF'}"`);
   };
 
-  // precedence-climbing for binary operators
+
   const BIN_PREC: Record<string, number> = {
     or: 1, and: 2, '==': 3, '!=': 3, '<': 3, '<=': 3, '>': 3, '>=': 3, '+': 4, '-': 4, '*': 5, '%': 5,
   };
@@ -408,7 +385,7 @@ function parseCondition(src: string): Node {
 
   function parsePostfix(): Node {
     let node = parsePrimary();
-    // "$a at <expr>"
+
     const t = peek();
     if (node.t === 'str' && t && t.type === 'kw' && t.v.toLowerCase() === 'at') {
       next();
@@ -455,7 +432,7 @@ function parseCondition(src: string): Node {
       throw new Error(`unexpected keyword "${t.v}"`);
     }
     if (t.type === 'num') {
-      // "N of ..."
+
       const la = peek();
       if (la && la.type === 'kw' && la.v.toLowerCase() === 'of') {
         next();
@@ -489,12 +466,12 @@ function parseCondition(src: string): Node {
   return ast;
 }
 
-// ── Matching ─────────────────────────────────────────────────────────────────
+
 
 interface ScanCtx {
   buf: Uint8Array;
   latin1: string;
-  matches: Map<string, number[]>; // string id → offsets
+  matches: Map<string, number[]>;
 }
 
 function buildContext(buf: Uint8Array, latin1: string, rule: YaraRule): ScanCtx {
@@ -512,7 +489,7 @@ function findString(buf: Uint8Array, latin1: string, s: YaraStringDef): number[]
 function findText(hay: string, needle: string, s: YaraStringDef): number[] {
   const offsets: number[] = [];
   const wantWide = s.wide;
-  const wantAscii = s.ascii || !s.wide; // default ascii unless only-wide
+  const wantAscii = s.ascii || !s.wide;
   const variants: string[] = [];
   if (wantAscii) variants.push(needle);
   if (wantWide) variants.push([...needle].map((c) => c + '\x00').join(''));
@@ -564,7 +541,7 @@ function matchHexAt(buf: Uint8Array, pos: number, parts: HexPart[], pi: number):
     }
     return matchHexAt(buf, pos + part.bytes.length, parts, pi + 1);
   }
-  // jump [min,max]
+
   const max = Math.min(part.max, buf.length - pos);
   for (let adv = part.min; adv <= max; adv++) {
     if (matchHexAt(buf, pos + adv, parts, pi + 1)) return true;
@@ -572,7 +549,7 @@ function matchHexAt(buf: Uint8Array, pos: number, parts: HexPart[], pi: number):
   return false;
 }
 
-// ── Condition evaluation ─────────────────────────────────────────────────────
+
 
 function readUint(buf: Uint8Array, off: number, size: number): number {
   if (off < 0 || off + size > buf.length) return 0;
@@ -670,12 +647,12 @@ function evalOf(node: Extract<Node, { t: 'of' }>, ctx: ScanCtx, rule: YaraRule):
   return matched >= need && ids.length > 0 ? 1 : 0;
 }
 
-// ── Public scan API ──────────────────────────────────────────────────────────
+
 
 export function scanBytes(buf: Uint8Array, rules: YaraRule[]): YaraMatch[] {
   const out: YaraMatch[] = [];
-  // Convert to a latin1 string ONCE (byte index === char index) and reuse it for
-  // every rule's text/regex matching, rather than re-encoding the file per rule.
+
+
   const latin1 = Buffer.from(buf).toString('latin1');
   for (const rule of rules) {
     let ctx: ScanCtx;
@@ -686,7 +663,7 @@ export function scanBytes(buf: Uint8Array, rules: YaraRule[]): YaraMatch[] {
         out.push({ rule: rule.name, tags: rule.tags, meta: rule.meta, strings: matchedStrings });
       }
     } catch {
-      // a single rule's evaluation error must not break the scan
+      // Skip rules that fail to evaluate.
     }
   }
   return out;

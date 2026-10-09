@@ -1,16 +1,4 @@
-/**
- * SSRF-safe HTTP(S) fetcher.
- *
- * Every hop is guarded *and* pinned: the socket is forced to connect to the IP the
- * {@link guardHost} guard already vetted (via a custom `lookup`), so DNS can't be
- * rebound to an internal address between the check and the connect. Redirects are
- * followed manually - each `Location` is re-parsed and re-guarded before we move.
- *
- * The fetcher reads bytes only; it never executes anything. We deliberately accept
- * invalid TLS (`rejectUnauthorized:false`) because the *point* is to inspect hostile
- * sites and report cert problems, not to trust them. Hard caps on redirects, total
- * bytes and wall-clock time bound every request.
- */
+
 
 import http from 'node:http';
 import https from 'node:https';
@@ -39,16 +27,16 @@ export interface FetchResult {
   tls?: TlsInfo;
   bodyText?: string;
   error?: string;
-  /** Union of public IPs the host(s) resolved to across the chain. */
+
   resolvedIps: string[];
-  /** Set when the guard refused a hop - surfaced as a strong network signal. */
+
   blocked?: { url: string; reason: string; category?: string };
 }
 
 const DEFAULTS = {
   maxRedirects: 8,
   timeoutMs: 8000,
-  maxBytes: 2 * 1024 * 1024, // 2 MiB
+  maxBytes: 2 * 1024 * 1024,
   userAgent: 'ArgusScanner/1.0 (+defensive URL analysis; bytes read, never executed)',
 };
 
@@ -110,9 +98,9 @@ export function requestOnce(
     const isHttps = target.protocol === 'https:';
     const mod = isHttps ? https : http;
 
-    // Pin the socket to the vetted IP regardless of what DNS says now.
+
     const lookup: net.LookupFunction = (_hostname, options, cb) => {
-      // net may call with options.all true or false; satisfy both shapes.
+
       if (options && typeof options === 'object' && options.all) {
         (cb as unknown as (e: null, a: Array<{ address: string; family: number }>) => void)(null, [
           { address: pinnedIp, family: pinnedFamily },
@@ -122,9 +110,9 @@ export function requestOnce(
       }
     };
 
-    // Single-settle guard + an ABSOLUTE wall-clock deadline (req.setTimeout is only
-    // an *idle* timeout - a slow-drip server could otherwise hold the socket open
-    // indefinitely under the byte cap).
+
+
+
     let settled = false;
     let deadline: ReturnType<typeof setTimeout>;
     let req: http.ClientRequest;
@@ -148,7 +136,7 @@ export function requestOnce(
         method: 'GET',
         lookup,
         servername: isHttps ? target.hostname : undefined,
-        rejectUnauthorized: false, // we inspect hostile certs; never trust them
+        rejectUnauthorized: false,
         headers: {
           'user-agent': opts.userAgent,
           accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
@@ -164,9 +152,7 @@ export function requestOnce(
         if (isHttps && res.socket) {
           try {
             tls = certToTls(res.socket as import('node:tls').TLSSocket);
-          } catch {
-            /* cert read best-effort */
-          }
+          } catch {}
         }
         const build = (): HopResult => ({
           status: res.statusCode ?? 0,
@@ -264,7 +250,7 @@ export async function safeFetch(rawUrl: string, options: FetchOptions = {}): Pro
       continue;
     }
 
-    // Terminal response.
+
     const contentType = (hop.headers['content-type'] as string | undefined)?.split(';')[0]?.trim();
     const bodyText = hop.body.toString('utf8');
     return {

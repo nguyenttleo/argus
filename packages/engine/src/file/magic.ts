@@ -1,31 +1,24 @@
-/**
- * Magic-byte file type detection + extension-mismatch logic.
- *
- * The declared extension on an upload is attacker-controlled; the bytes are not.
- * Detecting that "invoice.pdf" is really a Windows PE executable is one of the
- * highest-signal checks a file scanner can do. All detection is read-only byte
- * inspection - the file is never executed.
- */
+
 
 export interface DetectedType {
-  type: string; // canonical short id, e.g. 'pe', 'pdf', 'zip'
-  label: string; // human label
+  type: string;
+  label: string;
   mime: string;
-  exts: string[]; // extensions normally associated with this type
-  /** broad family for mismatch reasoning */
+  exts: string[];
+
   family: 'executable' | 'document' | 'archive' | 'image' | 'media' | 'script' | 'other';
 }
 
 interface Sig extends DetectedType {
   offset: number;
   bytes: number[];
-  /** optional second anchor (e.g. RIFF…WEBP) */
+
   also?: { offset: number; bytes: number[] };
 }
 
 const b = (s: string): number[] => [...s].map((c) => c.charCodeAt(0));
 
-// Order matters: more specific signatures first.
+
 const SIGNATURES: Sig[] = [
   { type: 'pe', label: 'Windows PE executable (EXE/DLL)', mime: 'application/vnd.microsoft.portable-executable', exts: ['exe', 'dll', 'sys', 'scr', 'ocx'], family: 'executable', offset: 0, bytes: b('MZ') },
   { type: 'elf', label: 'ELF executable (Linux/Unix)', mime: 'application/x-elf', exts: ['elf', 'so', 'bin', 'out'], family: 'executable', offset: 0, bytes: [0x7f, 0x45, 0x4c, 0x46] },
@@ -71,7 +64,7 @@ export function detectType(buf: Uint8Array): DetectedType | undefined {
       return detected;
     }
   }
-  // Shebang scripts
+
   if (matchesAt(buf, 0, b('#!'))) {
     return { type: 'script', label: 'Shell/interpreter script (shebang)', mime: 'text/x-shellscript', exts: ['sh', 'py', 'pl', 'rb'], family: 'script' };
   }
@@ -88,7 +81,7 @@ export interface MismatchResult {
   mismatch: boolean;
   detected?: DetectedType;
   declaredExt: string;
-  /** True when the real type is an executable but the name claims something benign. */
+
   executableMasquerade: boolean;
 }
 
@@ -98,10 +91,10 @@ export function checkTypeMismatch(buf: Uint8Array, filename: string): MismatchRe
   const detected = detectType(buf);
   const declaredExt = extOf(filename);
   if (!detected) return { mismatch: false, declaredExt, executableMasquerade: false };
-  // No extension or extension already consistent with the detected type → no mismatch.
+
   const consistent = declaredExt === '' || detected.exts.includes(declaredExt);
   const mismatch = !consistent;
-  // Map the declared extension to a rough family to decide "masquerade".
+
   const declaredFamily = familyForExt(declaredExt);
   const executableMasquerade =
     detected.family === 'executable' && declaredFamily !== undefined && BENIGN_FAMILIES.has(declaredFamily);

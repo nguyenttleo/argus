@@ -12,9 +12,9 @@ export interface ServerConfig extends EngineConfig {
   corsOrigin: string;
   rateLimitMax: number;
   rateLimitWindowMs: number;
-  /** TTL for the in-memory full-scan result cache (repeat scans return instantly). */
+
   scanCacheTtlMs: number;
-  /** default options for URL scans when the request doesn't specify */
+
   urlFetchDefault: boolean;
   reputationDefault: boolean;
 }

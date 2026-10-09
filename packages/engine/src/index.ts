@@ -1,4 +1,4 @@
-// @argus/engine - analysis engines shared by the server and CLI.
+
 export { analyzeUrl, InvalidUrlError, type AnalyzeUrlDeps } from './url/analyze.ts';
 export { analyzeFile, type AnalyzeFileInput, type AnalyzeFileDeps, type DetonateFn } from './file/analyze.ts';
 export { hashBytes, shannonEntropy, type FileHashes } from './file/hash.ts';

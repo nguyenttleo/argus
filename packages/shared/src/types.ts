@@ -1,19 +1,13 @@
-/**
- * Argus shared types - one vocabulary flowing engine → server → cli → web.
- *
- * Design rule (see README §"Why it lands"): a verdict is NEVER a bare label.
- * Every verdict is the deterministic output of a list of {@link Signal}s, and the
- * full breakdown travels with the verdict so the UI can always explain *why*.
- */
+
 
 export const ENGINE_VERSION = '1.0.0';
 
 export type ScanKind = 'url' | 'file';
 
-/** The three-state verdict every scan resolves to. */
+
 export type Verdict = 'safe' | 'suspicious' | 'malicious';
 
-/** Ordered low→high; used for sorting and badge colour. */
+
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 
 export const SEVERITY_RANK: Record<Severity, number> = {
@@ -24,39 +18,36 @@ export const SEVERITY_RANK: Record<Severity, number> = {
   critical: 4,
 };
 
-/** Where a signal came from - drives grouping in the report card. */
-export type SignalCategory =
-  | 'lexical' // URL string/structure heuristics
-  | 'reputation' // 3rd-party threat feeds (Safe Browsing, URLhaus, VT…)
-  | 'network' // DNS / IP / SSRF observations
-  | 'tls' // certificate inspection
-  | 'content' // fetched page content
-  | 'static' // file static analysis (magic bytes, macros, headers)
-  | 'signature' // exact known-bad signatures (e.g. EICAR)
-  | 'yara' // YARA rule matches
-  | 'detonation' // behavioural IOCs from sandboxed run
-  | 'meta'; // scan-process notes (coverage, errors)
 
-/**
- * A single piece of evidence contributing to (or mitigating) the risk score.
- * Weights/confidence feed the deterministic scoring model in `scoring.ts`.
- */
+export type SignalCategory =
+  | 'lexical'
+  | 'reputation'
+  | 'network'
+  | 'tls'
+  | 'content'
+  | 'static'
+  | 'signature'
+  | 'yara'
+  | 'detonation'
+  | 'meta';
+
+
 export interface Signal {
-  /** Stable identifier, e.g. `url.ip_host`, `file.eicar`. */
+
   id: string;
   category: SignalCategory;
-  /** Short human title shown as the row heading. */
+
   title: string;
-  /** One- or two-sentence explanation of what fired and why it matters. */
+
   detail: string;
   severity: Severity;
-  /** 0–100 risk contribution. For mitigating signals, the strength of mitigation. */
+
   weight: number;
-  /** 0–1 - how sure we are this observation is real/correct. */
+
   confidence: number;
-  /** When true, this signal REDUCES risk instead of adding it. */
+
   mitigates?: boolean;
-  /** Structured backing data (matched string, resolved IP, cert fields…). */
+
   evidence?: Record<string, unknown>;
 }
 
@@ -80,29 +71,29 @@ export interface Ioc {
   note?: string;
 }
 
-/** The unified scan result. Same shape for URL and file scans. */
+
 export interface Report {
   id: string;
   kind: ScanKind;
-  /** Display target: the URL, or the filename (+ short sha) for files. */
+
   target: string;
   verdict: Verdict;
-  /** 0–100. */
+
   score: number;
-  /** 0–1 - confidence in the verdict itself, given evidence coverage. */
+
   confidence: number;
-  /** One-line plain-English summary for non-experts. */
+
   summary: string;
   signals: Signal[];
   iocs: Ioc[];
-  /** Kind-specific detail block. */
+
   detail: UrlScanDetail | FileScanDetail;
-  createdAt: string; // ISO-8601
+  createdAt: string;
   engineVersion: string;
   durationMs: number;
 }
 
-// ── URL scan detail ──────────────────────────────────────────────────────────
+
 
 export interface RedirectHop {
   url: string;
@@ -126,13 +117,13 @@ export interface TlsInfo {
 
 export interface ReputationResult {
   provider: string;
-  /** Was the provider actually consulted (API key present / cache hit)? */
+
   available: boolean;
-  /** Did the provider flag this target? */
+
   listed: boolean;
   categories?: string[];
   detail?: string;
-  /** Where the answer came from. */
+
   source?: 'live' | 'cache' | 'local-feed' | 'unavailable';
 }
 
@@ -202,7 +193,7 @@ export interface UrlScanDetail {
   reputation: ReputationResult[];
 }
 
-// ── File scan detail ─────────────────────────────────────────────────────────
+
 
 export interface StaticFinding {
   id: string;
@@ -216,7 +207,7 @@ export interface YaraHit {
   namespace?: string;
   tags: string[];
   meta: Record<string, string>;
-  /** Identifiers of the strings that matched, e.g. `$eicar`, `$mz`. */
+
   strings: string[];
 }
 
@@ -240,7 +231,7 @@ export interface PeDetail {
   isDll: boolean;
   isDriver: boolean;
   sections: PeSection[];
-  /** import hash (md5 of ordered dll.func list) - clusters malware families */
+
   imphash?: string;
   importedDlls: string[];
   suspiciousImports: string[];
@@ -258,15 +249,15 @@ export interface FileScanDetail {
   sha256: string;
   sha1?: string;
   md5?: string;
-  /** ssdeep-style fuzzy hash for similarity clustering. */
+
   fuzzy?: string;
-  /** From the supplied extension / client-declared MIME. */
+
   declaredType?: string;
-  /** Inferred from magic bytes. */
+
   realType?: string;
   realTypeLabel?: string;
   typeMismatch: boolean;
-  /** Shannon entropy of the bytes (0–8). High ⇒ packed/encrypted. */
+
   entropy: number;
   pe?: PeDetail;
   staticFindings: StaticFinding[];
@@ -276,9 +267,9 @@ export interface FileScanDetail {
   detonation?: DetonationResult;
 }
 
-// ── History / stats projections ──────────────────────────────────────────────
 
-/** Lightweight row for history lists (no heavy detail/signals). */
+
+
 export interface ScanSummary {
   id: string;
   kind: ScanKind;
@@ -297,18 +288,18 @@ export interface Stats {
   byKind: Record<ScanKind, number>;
 }
 
-// ── Scan request shapes (API/CLI) ────────────────────────────────────────────
+
 
 export interface UrlScanOptions {
-  /** Resolve redirect chain + fetch content through the SSRF-safe fetcher. */
+
   fetch?: boolean;
-  /** Consult external reputation providers (requires keys). */
+
   reputation?: boolean;
 }
 
 export interface FileScanOptions {
-  /** Consult VirusTotal by hash (requires key). */
+
   reputation?: boolean;
-  /** Detonate in Tartarus if static analysis is inconclusive-but-suspicious. */
+
   detonate?: boolean;
 }

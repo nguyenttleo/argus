@@ -8,10 +8,10 @@ import { safeBrowsingProvider } from './safebrowsing.ts';
 import { virusTotalProvider } from './virustotal.ts';
 import { malwareBazaarProvider } from './malwarebazaar.ts';
 
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
+const CACHE_TTL_MS = 10 * 60 * 1000;
 
 export interface ReputationRegistry {
-  /** Names of providers actually configured (have keys / are always-on). */
+
   configuredProviders(): string[];
   checkUrl(url: string): Promise<ReputationResult[]>;
   checkHash(sha256: string): Promise<ReputationResult[]>;

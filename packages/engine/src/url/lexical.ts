@@ -1,11 +1,4 @@
-/**
- * Lexical / structural URL heuristics - the offline backbone of URL analysis.
- *
- * These signals require no network and no API keys; they read the URL string the
- * way a wary human would ("why is there an @ in here? why is the real domain a
- * random .tk? why does this look like paypal but isn't?") and turn each tell into
- * an explainable {@link Signal}.
- */
+
 
 import { parse as parseDomain } from 'tldts';
 import { domainToUnicode } from 'node:url';
@@ -40,9 +33,9 @@ export interface LexicalResult {
   signals: Signal[];
 }
 
-// ── small string utilities ───────────────────────────────────────────────────
 
-/** Classic DP Levenshtein distance. */
+
+
 export function levenshtein(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
@@ -61,7 +54,7 @@ export function levenshtein(a: string, b: string): number {
   return prev[n]!;
 }
 
-/** Common Cyrillic/Greek/digit homoglyphs → their Latin lookalike. */
+
 const CONFUSABLES: Record<string, string> = {
   а: 'a', е: 'e', о: 'o', р: 'p', с: 'c', у: 'y', х: 'x', ѕ: 's', і: 'i', ј: 'j',
   к: 'k', м: 'm', н: 'h', т: 't', в: 'b', г: 'r', д: 'd', ӏ: 'l',
@@ -70,14 +63,14 @@ const CONFUSABLES: Record<string, string> = {
   '@': 'a', $: 's',
 };
 
-/** Normalise confusables → a comparable "skeleton" of a label. */
+
 export function skeleton(s: string): string {
   let out = '';
   for (const ch of s.toLowerCase()) out += CONFUSABLES[ch] ?? ch;
   return out;
 }
 
-/** Unicode scripts present in a string (Latin/Cyrillic/Greek/Han/…). */
+
 function scriptsOf(s: string): Set<string> {
   const scripts = new Set<string>();
   if (/\p{Script=Latin}/u.test(s)) scripts.add('Latin');
@@ -93,11 +86,11 @@ function sig(s: Omit<Signal, 'confidence'> & { confidence?: number }): Signal {
   return { confidence: 0.8, ...s };
 }
 
-// ── main analyzer ─────────────────────────────────────────────────────────────
+
 
 export function analyzeLexical(rawUrl: string): LexicalResult {
   const url = new URL(rawUrl);
-  const host = url.hostname; // already lowercased + IDNA(punycode) encoded by WHATWG
+  const host = url.hostname;
   const td = parseDomain(url.href);
   const isIpHost = isIpLiteral(host) || td.isIp === true;
 
@@ -123,7 +116,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
   const fullPath = (url.pathname + url.search).toLowerCase();
   const hostForKeywords = host.toLowerCase();
 
-  // 0. Dangerous (non-web) scheme - script execution / data smuggling vectors.
+
   if (parsed.scheme !== 'http' && parsed.scheme !== 'https') {
     const scriptable = parsed.scheme === 'javascript' || parsed.scheme === 'vbscript';
     add({
@@ -140,7 +133,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 1. Credentials / @ in authority
+
   if (url.username || url.password) {
     add({
       id: 'url.userinfo',
@@ -154,7 +147,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 2. IP address as host
+
   if (isIpHost) {
     add({
       id: 'url.ip_host',
@@ -168,7 +161,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 3. Punycode / IDN + homoglyph
+
   const labels = host.split('.');
   const puny = labels.filter((l) => l.startsWith('xn--'));
   if (puny.length > 0) {
@@ -198,7 +191,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 4. Brand impersonation: lookalike SLD (typosquat) OR brand-in-subdomain w/ wrong eTLD+1
+
   if (sld && !isIpHost) {
     const skel = skeleton(sld);
     let typo: { brand: string; brandDomain: string; dist: number } | undefined;
@@ -225,7 +218,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
       });
     }
 
-    // brand name appears in a subdomain/label but the real registrable domain is something else
+
     const subAndSld = `${td.subdomain ?? ''}`.toLowerCase();
     for (const [brand, dom] of Object.entries(BRANDS)) {
       if (registrable === dom) continue;
@@ -246,7 +239,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     }
   }
 
-  // 5. Suspicious TLD
+
   if (tld && SUSPICIOUS_TLDS.has(tld)) {
     add({
       id: 'url.suspicious_tld',
@@ -260,7 +253,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 6. Sub-domain depth
+
   const subLabels = (td.subdomain ?? '').split('.').filter(Boolean);
   if (!isIpHost && subLabels.length >= 3) {
     const w = Math.min(15 + (subLabels.length - 2) * 8, 38);
@@ -276,7 +269,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 7. URL shortener
+
   if (registrable && URL_SHORTENERS.has(registrable)) {
     add({
       id: 'url.shortener',
@@ -290,7 +283,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 8. Phishing keywords in host/path
+
   const kwHits = PHISHING_KEYWORDS.filter(
     (k) => hostForKeywords.includes(k) || fullPath.includes(k),
   );
@@ -308,7 +301,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 9. Many hyphens in the registrable label (secure-paypal-login.com)
+
   const hyphens = (sld.match(/-/g) ?? []).length;
   if (hyphens >= 2 && !sld.startsWith('xn--')) {
     add({
@@ -323,7 +316,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 10. Non-standard port
+
   if (url.port && url.port !== '80' && url.port !== '443') {
     add({
       id: 'url.nonstandard_port',
@@ -337,7 +330,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 11. Dangerous file extension in the path
+
   const lastSeg = url.pathname.split('/').pop() ?? '';
   const ext = lastSeg.includes('.') ? lastSeg.split('.').pop()!.toLowerCase() : '';
   const doubleExt = /\.(pdf|doc|docx|jpg|png|invoice|receipt)\.(\w{2,4})$/i.test(lastSeg);
@@ -356,7 +349,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // 12. Open-redirect parameter carrying another URL
+
   for (const [k, v] of url.searchParams) {
     if (REDIRECT_PARAMS.has(k.toLowerCase()) && /^https?:|%2f%2f|\/\//i.test(v)) {
       add({
@@ -373,7 +366,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     }
   }
 
-  // 13. Excessive length
+
   if (rawUrl.length > 120) {
     const w = Math.min(8 + Math.floor((rawUrl.length - 120) / 60) * 4, 20);
     add({
@@ -388,7 +381,7 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-  // ── Mitigating signal: exact match against the popular-domain allowlist ──
+
   if (registrable && POPULAR_DOMAINS.has(registrable)) {
     add({
       id: 'url.popular_allowlist',

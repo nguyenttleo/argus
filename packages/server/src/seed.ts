@@ -1,12 +1,4 @@
-/**
- * Seed the database with a handful of demo scans so the dashboard has content on a
- * fresh checkout. Runs the real engines offline (no network / no API keys needed -
- * reputation comes from the bundled local feed).
- *
- * NB: malicious fixtures are assembled at runtime (base64 / string concatenation) so
- * this source file contains no contiguous live signature - otherwise endpoint AV
- * quarantines the file.
- */
+
 
 import { analyzeFile, analyzeUrl } from '@argus/engine';
 import { ArgusDb } from './db.ts';
@@ -34,7 +26,7 @@ export async function seed(db: ArgusDb): Promise<number> {
   return reports.length;
 }
 
-// Run directly: `npm run seed`
+
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('seed.ts')) {
   const config = loadServerConfig();
   const db = new ArgusDb(config.dbPath);

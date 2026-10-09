@@ -41,7 +41,7 @@ test('a single decisive critical signal forces malicious regardless of weight ma
 test('noisy-OR has diminishing returns - many weak signals do not trivially max out', () => {
   const weak = Array.from({ length: 10 }, (_, i) => sig({ id: `w${i}`, weight: 10, confidence: 0.5, severity: 'low' }));
   const r = scoreSignals(weak);
-  // 10 × p=0.05 ⇒ 1-(0.95^10) ≈ 0.40 ⇒ ~40, suspicious - not malicious.
+
   assert.ok(r.score < THRESHOLD_MALICIOUS, `expected < ${THRESHOLD_MALICIOUS}, got ${r.score}`);
   assert.ok(r.score >= THRESHOLD_SUSPICIOUS, `expected >= ${THRESHOLD_SUSPICIOUS}, got ${r.score}`);
   assert.equal(r.verdict, 'suspicious');
@@ -85,7 +85,7 @@ test('probability is clamped and weight/confidence scaled', () => {
 });
 
 test('verdict confidence is lower near a boundary than far from it', () => {
-  // Construct a score hugging the malicious boundary vs one far above.
+
   const near = scoreSignals([sig({ weight: 62, confidence: 0.97, severity: 'high' })]);
   const far = scoreSignals([sig({ weight: 98, confidence: 0.97, severity: 'high' })]);
   assert.ok(far.confidence > near.confidence);

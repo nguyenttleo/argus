@@ -1,10 +1,7 @@
 import type { ReputationResult } from '@argus/shared';
 import { fetchJson, unavailable, type ReputationProvider } from './provider.ts';
 
-/**
- * URLhaus (abuse.ch) host/URL reputation. abuse.ch now gates the API behind a
- * free Auth-Key; without one we degrade to "unavailable" rather than failing.
- */
+
 const HOST_ENDPOINT = 'https://urlhaus-api.abuse.ch/v1/host/';
 
 interface UrlhausResponse {

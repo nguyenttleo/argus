@@ -1,10 +1,4 @@
-/**
- * RDAP domain-age + status lookup. RDAP (the modern, structured replacement for
- * WHOIS) is free and key-less via the rdap.org bootstrap, which redirects to the
- * authoritative registry. Domain age is the single strongest phishing signal a
- * scanner can have: the overwhelming majority of phishing domains are days to
- * weeks old. Failures degrade to "unavailable" - never block a scan.
- */
+
 
 import type { RdapInfo, Signal } from '@argus/shared';
 
@@ -72,7 +66,7 @@ export function rdapSignals(info: RdapInfo): Signal[] {
   if (typeof info.ageDays === 'number') {
     const d = info.ageDays;
     if (d < 0) {
-      // clock skew / future date - ignore
+      // Skip invalid dates.
     } else if (d <= 14) {
       out.push(ageSignal(d, 'high', 52, 0.82));
     } else if (d <= 90) {

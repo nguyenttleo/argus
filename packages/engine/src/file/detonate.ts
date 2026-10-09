@@ -1,12 +1,4 @@
-/**
- * Optional behavioural detonation via the Tartarus sandbox (spec v3).
- *
- * Argus never runs a sample on the host. When (and only when) the operator opts in
- * AND a `TARTARUS_URL` is configured, script payloads (py/js) can be shipped to the
- * isolated Tartarus sandbox, which executes them and returns a trace we mine for
- * behavioural IOCs. Any failure degrades to "unavailable" - detonation is additive,
- * never required. Binaries are not detonated by this integration.
- */
+
 
 import type { DetonationResult, Ioc } from '@argus/shared';
 import type { EngineConfig } from '../config.ts';

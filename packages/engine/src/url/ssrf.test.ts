@@ -74,7 +74,7 @@ test('DNS failure is a refusal, not a crash', async () => {
 });
 
 test('decimal/hex IP forms are normalised by URL parser before reaching the guard', () => {
-  // WHATWG URL canonicalises numeric IPv4 - the guard then sees a literal.
+
   assert.equal(new URL('http://2130706433/').hostname, '127.0.0.1');
   assert.equal(new URL('http://0x7f000001/').hostname, '127.0.0.1');
   assert.equal(new URL('http://017700000001/').hostname, '127.0.0.1');

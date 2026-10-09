@@ -17,7 +17,7 @@ test('private / loopback / link-local IPv4 are blocked', () => {
     ['172.16.0.1', 'private'],
     ['172.31.255.255', 'private'],
     ['192.168.1.1', 'private'],
-    ['169.254.169.254', 'link-local'], // ← cloud metadata endpoint
+    ['169.254.169.254', 'link-local'],
     ['169.254.0.1', 'link-local'],
     ['100.64.0.1', 'cgnat'],
     ['0.0.0.0', 'this-network'],
@@ -39,7 +39,7 @@ test('172.32.0.1 is public (just outside 172.16/12)', () => {
 });
 
 test('public IPv6 is public; loopback/ULA/link-local blocked', () => {
-  assert.equal(isPublicIp('2606:4700:4700::1111'), true); // cloudflare
+  assert.equal(isPublicIp('2606:4700:4700::1111'), true);
   assert.equal(classifyIp('::1').public, false);
   assert.equal(classifyIp('::1').category, 'loopback');
   assert.equal(classifyIp('fe80::1').category, 'link-local');
@@ -49,13 +49,13 @@ test('public IPv6 is public; loopback/ULA/link-local blocked', () => {
 });
 
 test('IPv4-mapped IPv6 unwraps and re-checks the embedded v4', () => {
-  // ::ffff:169.254.169.254 must still be blocked as link-local
+
   const c = classifyIp('::ffff:169.254.169.254');
   assert.equal(c.public, false);
   assert.match(c.reason, /169\.254\.169\.254/);
-  // ::ffff:127.0.0.1 blocked
+
   assert.equal(classifyIp('::ffff:127.0.0.1').public, false);
-  // ::ffff:8.8.8.8 is public
+
   assert.equal(classifyIp('::ffff:8.8.8.8').public, true);
 });
 

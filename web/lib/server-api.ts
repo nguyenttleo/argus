@@ -1,4 +1,4 @@
-// Server-side only: base URL of the Argus REST API the proxy routes forward to.
+
 export const ARGUS_API = process.env.ARGUS_API ?? 'http://127.0.0.1:8089';
 
 const UNREACHABLE_MESSAGE =

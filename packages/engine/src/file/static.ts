@@ -1,14 +1,4 @@
-/**
- * Static file analysis - structural inspection that complements the YARA pass.
- * Everything here is read-only byte parsing; the file is NEVER executed.
- *
- *   • ZIP/OOXML: central-directory parse → macro detection + zip-bomb guard
- *   • OLE (legacy Office): VBA-macro marker heuristics
- *   • PDF: JavaScript / auto-action / launch / embedded-file detection
- *   • PE: DOS/COFF header parse (machine, subsystem, DLL flag, packer hints)
- *   • scripts/text: obfuscation & download-exec heuristics
- *   • IOC extraction: URLs / IPs / emails embedded in the bytes
- */
+
 
 import type { Ioc, PeDetail, Signal, StaticFinding } from '@argus/shared';
 import type { DetectedType } from './magic.ts';
@@ -39,13 +29,13 @@ function u32(buf: Uint8Array, off: number): number {
   return (buf[off]! | (buf[off + 1]! << 8) | (buf[off + 2]! << 16) | (buf[off + 3]! << 24)) >>> 0;
 }
 
-// ── ZIP / OOXML ───────────────────────────────────────────────────────────────
+
 
 const EOCD_SIG = 0x06054b50;
 const CDIR_SIG = 0x02014b50;
 
 export function parseZip(buf: Uint8Array): ArchiveInfo | undefined {
-  // locate End Of Central Directory (scan back over up to 64KB + 22)
+
   const minPos = Math.max(0, buf.length - (0xffff + 22));
   let eocd = -1;
   for (let i = buf.length - 22; i >= minPos; i--) {
@@ -78,7 +68,7 @@ export function parseZip(buf: Uint8Array): ArchiveInfo | undefined {
   return { entries: entries || count, totalCompressed, totalUncompressed, ratio, names };
 }
 
-// ── helpers ────────────────────────────────────────────────────────────────
+
 
 function latin1(buf: Uint8Array, max = 5_000_000): string {
   return Buffer.from(buf.subarray(0, max)).toString('latin1');
@@ -101,7 +91,7 @@ function finding(
   });
 }
 
-// ── main ───────────────────────────────────────────────────────────────────
+
 
 export function analyzeStatic(buf: Uint8Array, filename: string, detected?: DetectedType): StaticResult {
   const findings: StaticFinding[] = [];
@@ -110,7 +100,7 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
   const result: StaticResult = { findings, signals, iocs };
   const text = latin1(buf);
 
-  // ── ZIP / OOXML ──
+
   if (detected?.type === 'zip') {
     const arc = parseZip(buf);
     if (arc) {
@@ -150,7 +140,7 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
     }
   }
 
-  // ── OLE (legacy Office) macro heuristics ──
+
   if (detected?.type === 'ole') {
     const markers = ['vbaProject', '_VBA_PROJECT', 'VBA_PROJECT', 'Auto_Open', 'AutoOpen', 'Workbook_Open', 'Document_Open', 'Macros'];
     const hit = markers.filter((m) => text.includes(m));
@@ -166,7 +156,7 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
     }
   }
 
-  // ── PDF active content ──
+
   if (detected?.type === 'pdf') {
     const checks: Array<[RegExp, string, number, StaticFinding['severity']]> = [
       [/\/JavaScript/g, 'JavaScript', 50, 'high'],
@@ -191,7 +181,7 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
     }
   }
 
-  // ── PE deep parse (imphash, imports, sections, signature) ──
+
   if (detected?.type === 'pe') {
     const pe = parsePeDetail(buf);
     if (pe) {
@@ -242,7 +232,7 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
     }
   }
 
-  // ── script / text obfuscation heuristics ──
+
   if (detected?.type === 'script' || detected === undefined) {
     const patterns: Array<[RegExp, string]> = [
       [/powershell\s+-(enc|encodedcommand|e )/i, 'encoded PowerShell command'],
@@ -277,7 +267,7 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
     }
   }
 
-  // ── IOC extraction from printable strings ──
+
   result.iocs.push(...extractIocs(text));
 
   return result;
@@ -309,10 +299,10 @@ export function extractIocs(text: string): Ioc[] {
   }
   for (const m of text.matchAll(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g)) push('email', m[0]);
   for (const m of text.matchAll(/\bCVE-\d{4}-\d{4,7}\b/gi)) push('cve', m[0].toUpperCase());
-  // Bitcoin (legacy + bech32) and Ethereum addresses (common ransomware/wallet IOCs)
+
   for (const m of text.matchAll(/\b(?:bc1[a-z0-9]{25,59}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b/g)) push('btc', m[0]);
   for (const m of text.matchAll(/\b0x[a-fA-F0-9]{40}\b/g)) push('eth', m[0]);
-  // Windows registry persistence paths
+
   for (const m of text.matchAll(/\b(?:HKLM|HKCU|HKEY_[A-Z_]+)\\[\\A-Za-z0-9 ._-]{6,120}/g)) push('registry', m[0]);
   return iocs;
 }

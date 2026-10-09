@@ -1,9 +1,3 @@
-/*
- * Argus built-in YARA rules.
- * Evaluated by the from-scratch YARA-subset engine in src/file/yara.ts.
- * Each rule carries `severity` + `weight` meta that the scorer maps to a Signal.
- */
-
 rule EICAR_Test_File : test signature
 {
     meta:

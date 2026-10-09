@@ -1,9 +1,4 @@
-/**
- * DNS intelligence for the registrable domain: MX / NS / TXT records and the
- * presence of SPF + DMARC email-authentication policies. Established organisations
- * almost always publish these; throwaway phishing domains usually don't. The
- * resolver is injectable so the logic is unit-testable offline.
- */
+
 
 import dnsPromises from 'node:dns/promises';
 import type { DnsInfo, Signal } from '@argus/shared';
@@ -29,7 +24,7 @@ export async function gatherDns(domain: string, resolver: DnsResolver = defaultR
       return await withTimeout(p);
     } catch (e) {
       const code = (e as NodeJS.ErrnoException).code ?? (e as Error).message;
-      // ENODATA / ENOTFOUND are normal (record simply absent) - only note real errors
+
       if (code !== 'ENODATA' && code !== 'ENOTFOUND') errors.push(`${label}: ${code}`);
       return fallback;
     }
@@ -64,10 +59,10 @@ export function dnsSignals(
 ): Signal[] {
   const out: Signal[] = [];
   if (ctx.isIpHost || !ctx.registrableDomain) return out;
-  if (dns.errors.length > 0) return out; // resolution problems - don't infer from partial data
+  if (dns.errors.length > 0) return out;
 
-  // Missing email authentication is a weak signal on its own, but meaningful when
-  // a page also tries to look like a known brand (real brands publish SPF/DMARC).
+
+
   if (!dns.hasSpf && !dns.hasDmarc) {
     out.push({
       id: 'dns.no_email_auth',

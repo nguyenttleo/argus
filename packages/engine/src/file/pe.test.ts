@@ -4,40 +4,40 @@ import { createHash } from 'node:crypto';
 import { parsePeDetail } from './pe.ts';
 import { extractIocs } from './static.ts';
 
-/** Build a minimal but structurally-valid PE32 importing KERNEL32.VirtualAllocEx. */
+
 function makePe(): Uint8Array {
   const b = Buffer.alloc(0x300);
-  b.writeUInt16LE(0x5a4d, 0); // MZ
-  b.writeUInt32LE(0x40, 0x3c); // e_lfanew
+  b.writeUInt16LE(0x5a4d, 0);
+  b.writeUInt32LE(0x40, 0x3c);
   const pe = 0x40;
-  b.writeUInt32LE(0x00004550, pe); // 'PE\0\0'
-  b.writeUInt16LE(0x14c, pe + 4); // machine x86
-  b.writeUInt16LE(1, pe + 6); // 1 section
-  b.writeUInt32LE(0x5a000000, pe + 8); // timestamp
-  b.writeUInt16LE(224, pe + 20); // SizeOfOptionalHeader
-  b.writeUInt16LE(0x0102, pe + 22); // characteristics (image, 32-bit)
+  b.writeUInt32LE(0x00004550, pe);
+  b.writeUInt16LE(0x14c, pe + 4);
+  b.writeUInt16LE(1, pe + 6);
+  b.writeUInt32LE(0x5a000000, pe + 8);
+  b.writeUInt16LE(224, pe + 20);
+  b.writeUInt16LE(0x0102, pe + 22);
   const opt = pe + 24;
-  b.writeUInt16LE(0x10b, opt); // PE32
-  b.writeUInt16LE(2, opt + 68); // subsystem GUI
-  b.writeUInt32LE(16, opt + 92); // NumberOfRvaAndSizes
+  b.writeUInt16LE(0x10b, opt);
+  b.writeUInt16LE(2, opt + 68);
+  b.writeUInt32LE(16, opt + 92);
   const dirs = opt + 96;
-  b.writeUInt32LE(0x1000, dirs + 8); // import dir RVA (index 1)
-  b.writeUInt32LE(40, dirs + 12); // import dir size
+  b.writeUInt32LE(0x1000, dirs + 8);
+  b.writeUInt32LE(40, dirs + 12);
   const sec = opt + 224;
   b.write('.text\0\0\0', sec, 'latin1');
-  b.writeUInt32LE(0x200, sec + 8); // VirtualSize
-  b.writeUInt32LE(0x1000, sec + 12); // VirtualAddress
-  b.writeUInt32LE(0x100, sec + 16); // SizeOfRawData
-  b.writeUInt32LE(0x200, sec + 20); // PointerToRawData
-  const raw = 0x200; // RVA 0x1000 -> file 0x200
-  b.writeUInt32LE(0x1020, raw + 0); // OriginalFirstThunk (ILT RVA)
-  b.writeUInt32LE(0x1040, raw + 12); // Name RVA
-  b.writeUInt32LE(0x1020, raw + 16); // FirstThunk
-  // null descriptor at file 0x214 already zero
-  b.writeUInt32LE(0x1050, raw + 0x20); // ILT thunk1 -> IMAGE_IMPORT_BY_NAME RVA
-  b.writeUInt32LE(0, raw + 0x24); // ILT terminator
+  b.writeUInt32LE(0x200, sec + 8);
+  b.writeUInt32LE(0x1000, sec + 12);
+  b.writeUInt32LE(0x100, sec + 16);
+  b.writeUInt32LE(0x200, sec + 20);
+  const raw = 0x200;
+  b.writeUInt32LE(0x1020, raw + 0);
+  b.writeUInt32LE(0x1040, raw + 12);
+  b.writeUInt32LE(0x1020, raw + 16);
+
+  b.writeUInt32LE(0x1050, raw + 0x20);
+  b.writeUInt32LE(0, raw + 0x24);
   b.write('KERNEL32.dll\0', raw + 0x40, 'latin1');
-  b.writeUInt16LE(0, raw + 0x50); // hint
+  b.writeUInt16LE(0, raw + 0x50);
   b.write('VirtualAllocEx\0', raw + 0x52, 'latin1');
   return new Uint8Array(b);
 }
@@ -66,7 +66,7 @@ test('imphash is deterministic', () => {
 
 test('non-PE input returns undefined', () => {
   assert.equal(parsePeDetail(new TextEncoder().encode('not a pe')), undefined);
-  assert.equal(parsePeDetail(new Uint8Array([0x4d, 0x5a])), undefined); // MZ but no PE header
+  assert.equal(parsePeDetail(new Uint8Array([0x4d, 0x5a])), undefined);
 });
 
 test('truncated PE does not crash', () => {
@@ -76,7 +76,7 @@ test('truncated PE does not crash', () => {
   }
 });
 
-// ── richer IOC extraction ──
+
 
 test('extractIocs finds crypto addresses, CVEs, onion, registry', () => {
   const text = [

@@ -1,10 +1,6 @@
-/**
- * Curated, offline threat-intel lists that power the lexical URL heuristics.
- * Small and hand-maintained on purpose - these are the "no API key required"
- * signals that let Argus produce a useful verdict fully offline.
- */
 
-/** Well-known brands frequently impersonated by phishing, → their real domain. */
+
+
 export const BRANDS: Record<string, string> = {
   paypal: 'paypal.com',
   google: 'google.com',
@@ -49,7 +45,7 @@ export const BRANDS: Record<string, string> = {
   yahoo: 'yahoo.com',
 };
 
-/** TLDs over-represented in abuse / phishing feeds. */
+
 export const SUSPICIOUS_TLDS = new Set([
   'tk', 'ml', 'ga', 'cf', 'gq', 'top', 'xyz', 'zip', 'mov', 'country', 'kim',
   'work', 'click', 'link', 'gdn', 'loan', 'men', 'date', 'racing', 'win',
@@ -59,7 +55,7 @@ export const SUSPICIOUS_TLDS = new Set([
   'skin', 'cyou', 'buzz', 'support', 'live', 'shop',
 ]);
 
-/** Link shorteners - they hide the real destination behind a redirect. */
+
 export const URL_SHORTENERS = new Set([
   'bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly',
   'cutt.ly', 'rebrand.ly', 'bl.ink', 'shorturl.at', 'rb.gy', 'tiny.cc', 't.ly',
@@ -67,7 +63,7 @@ export const URL_SHORTENERS = new Set([
   'mcaf.ee', 'shorte.st', 'tr.im', 'cli.gs',
 ]);
 
-/** Words that, in a host or path, suggest credential-harvesting intent. */
+
 export const PHISHING_KEYWORDS = [
   'login', 'log-in', 'signin', 'sign-in', 'verify', 'verification', 'secure',
   'security', 'account', 'update', 'confirm', 'webscr', 'banking', 'wallet',
@@ -75,11 +71,7 @@ export const PHISHING_KEYWORDS = [
   'authenticate', 'authorize', 'unusual', 'limited', 'restricted',
 ];
 
-/**
- * Curated allowlist of broadly-trusted registrable domains. An exact match is a
- * *mitigating* signal - it dampens false positives (e.g. "many subdomains" on
- * google.com) but never overrides a confirmed-malicious signal.
- */
+
 export const POPULAR_DOMAINS = new Set([
   ...Object.values(BRANDS),
   'youtube.com', 'wikipedia.org', 'reddit.com', 'bing.com', 'live.com',
@@ -91,13 +83,13 @@ export const POPULAR_DOMAINS = new Set([
   'wikihow.com', 'x.com', 'cloudfront.net', 'akamai.com', 'googleusercontent.com',
 ]);
 
-/** Legitimate app platforms that commonly hand users off to enterprise SSO. */
+
 export const TRUSTED_SSO_RELYING_PARTIES = new Set([
   'instructure.com',
   'canvaslms.com',
 ]);
 
-/** Identity-provider domains whose long OAuth/SAML URLs are expected in SSO flows. */
+
 export const TRUSTED_SSO_IDPS = new Set([
   'microsoftonline.com',
   'microsoft.com',
@@ -110,13 +102,13 @@ export const TRUSTED_SSO_IDPS = new Set([
   'accounts.google.com',
 ]);
 
-/** Query-parameter names commonly used for open-redirects. */
+
 export const REDIRECT_PARAMS = new Set([
   'url', 'redirect', 'redirect_uri', 'redirecturl', 'return', 'returnurl',
   'return_to', 'next', 'continue', 'dest', 'destination', 'goto', 'target', 'r', 'u',
 ]);
 
-/** Executable / dangerous file extensions if they appear in a URL path. */
+
 export const DANGEROUS_EXTS = new Set([
   'exe', 'scr', 'pif', 'com', 'bat', 'cmd', 'js', 'jse', 'vbs', 'vbe', 'wsf',
   'wsh', 'hta', 'msi', 'jar', 'ps1', 'apk', 'dmg', 'iso', 'img', 'lnk', 'reg',

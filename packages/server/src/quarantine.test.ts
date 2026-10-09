@@ -56,7 +56,7 @@ test('sweep removes entries older than the TTL', () => {
     const sha = 'd'.repeat(64);
     q.store(new Uint8Array([1]), sha);
     const p = join(dir, `${sha}.enc`);
-    // backdate the file 1 hour
+
     const old = new Date(Date.now() - 3600_000);
     utimesSync(p, old, old);
     const removed = q.sweep();

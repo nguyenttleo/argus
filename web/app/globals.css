@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Monokai terminal palette with verdict colors kept distinct. */
+
 @theme {
   --color-bg: #272822;
   --color-bg-deep: #1e1f1c;

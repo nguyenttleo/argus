@@ -12,7 +12,7 @@ const EICAR = Buffer.from(
 
 const config = {
   ...loadServerConfig({ ARGUS_DATA_DIR: '.data-test' }),
-  // keep tests offline + fast
+
   urlFetchDefault: false,
   reputationDefault: true,
   rateLimitMax: 1000,
@@ -61,7 +61,7 @@ test('POST /api/scan/url scores a phishing URL malicious and persists it', async
   assert.equal(report.verdict, 'malicious');
   assert.equal(report.kind, 'url');
 
-  // persisted + retrievable
+
   const get = await app.inject({ method: 'GET', url: `/api/scan/${report.id}` });
   assert.equal(get.statusCode, 200);
   assert.equal(get.json().id, report.id);
@@ -116,7 +116,7 @@ test('GET /api/scan/:id 404s for unknown id', async () => {
 });
 
 test('IOC search finds a scan by extracted indicator', async () => {
-  // scan a file containing a known URL IOC, then search for it
+
   const mp = multipartBody('c2.txt', Buffer.from('beacon http://evil.example.org/gate.php'));
   await app.inject({ method: 'POST', url: '/api/scan/file', payload: mp.payload, headers: mp.headers });
   const res = await app.inject({ method: 'GET', url: '/api/iocs/' + encodeURIComponent('http://evil.example.org/gate.php') });

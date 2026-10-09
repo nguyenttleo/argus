@@ -1,12 +1,4 @@
-/**
- * URL analysis orchestrator - fuses every URL signal source into one {@link Report}:
- *   lexical heuristics  →  (optional) SSRF-safe fetch + DNS + TLS + redirect chain
- *                       →  (optional) reputation feeds  →  scoring engine.
- *
- * All side-effecting dependencies (DNS resolver, fetcher, reputation registry,
- * clock, id generator) are injectable so the whole pipeline is unit-testable
- * offline and deterministically.
- */
+
 
 import { randomUUID } from 'node:crypto';
 import {
@@ -57,9 +49,9 @@ const EXECUTABLE_CONTENT_TYPES = new Set([
 
 function normalizeInput(raw: string): string {
   const trimmed = raw.trim();
-  // Allow users to paste "example.com/login" without a scheme.
+
   if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) {
-    if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed; // has some scheme (e.g. javascript:)
+    if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
     return `http://${trimmed}`;
   }
   return trimmed;
@@ -110,7 +102,7 @@ function fetchSignals(fetchRes: FetchResult, inputRegistrable: string | undefine
   const out: Signal[] = [];
 
   if (!fetchRes.ok && fetchRes.blocked) {
-    // The SSRF guard refused a hop. Not malicious per se, but very notable.
+
     out.push({
       id: 'net.fetch_blocked',
       category: 'network',
@@ -165,9 +157,7 @@ function fetchSignals(fetchRes: FetchResult, inputRegistrable: string | undefine
           confidence: 0.6,
         });
       }
-    } catch {
-      /* ignore */
-    }
+    } catch {}
   }
 
   return out;
@@ -257,7 +247,7 @@ export async function analyzeUrl(
   const iocs: Ioc[] = [];
   if (detail.registrableDomain) iocs.push({ type: 'domain', value: detail.registrableDomain });
 
-  // brand-impersonation context drives some downstream signal weighting
+
   const impersonatesBrand =
     signalsById.has('url.typosquat') ||
     signalsById.has('url.brand_in_subdomain') ||
@@ -265,12 +255,12 @@ export async function analyzeUrl(
 
   const domain = lexical.parsed.registrableDomain;
   const httpScheme = lexical.parsed.scheme === 'http' || lexical.parsed.scheme === 'https';
-  // DNS + RDAP are "deep" active lookups: run them (concurrently with the page
-  // fetch) only when the caller opted into fetching, so quick scans stay fast.
+
+
   const doEnrich = !!options.fetch && httpScheme && !lexical.parsed.isIpHost && !!domain;
 
-  // Launch independent network lookups concurrently with the fetch (efficiency:
-  // DNS, RDAP and the page fetch all run in parallel instead of in series).
+
+
   const dnsPromise: Promise<DnsInfo | undefined> = doEnrich
     ? gatherDns(domain!, deps.dnsResolver, config.fetchTimeoutMs).catch(() => undefined)
     : Promise.resolve(undefined);
@@ -282,7 +272,7 @@ export async function analyzeUrl(
       }).catch(() => undefined)
     : Promise.resolve(undefined);
 
-  // ── Active fetch (SSRF-safe) ──────────────────────────────────────────────
+
   let reputationTarget = lexical.parsed.normalized;
   let fetchBody: string | undefined;
   let pageUrl = lexical.parsed.normalized;
@@ -323,8 +313,8 @@ export async function analyzeUrl(
       for (const s of tlsSignals(fetchRes.tls, scheme)) addSignal(s);
     }
 
-    // If a redirect landed on a *different* registered domain, re-run the lexical
-    // pass on the final URL so shortener / cloaked destinations are judged too.
+
+
     if (fetchRes.ok && fetchRes.finalUrl && fetchRes.finalUrl !== lexical.parsed.normalized) {
       reputationTarget = fetchRes.finalUrl;
       try {
@@ -353,13 +343,11 @@ export async function analyzeUrl(
             addSignal({ ...s, detail: `After redirect to ${finalLex.parsed.host}: ${s.detail}` });
           }
         }
-      } catch {
-        /* final URL unparseable - ignore */
-      }
+      } catch {}
     }
   }
 
-  // ── DNS + RDAP (resolved concurrently with the fetch above) ───────────────
+
   const dns = await dnsPromise;
   if (dns) {
     detail.dns = dns;
@@ -371,7 +359,7 @@ export async function analyzeUrl(
     for (const s of rdapSignals(rdap)) addSignal(s);
   }
 
-  // ── Page content analysis (on bytes already fetched, never executed) ──────
+
   if (fetchBody && looksLikeHtml(detail.http?.contentType, fetchBody)) {
     const content = analyzeContent(fetchBody, pageUrl);
     detail.content = content;
@@ -389,7 +377,7 @@ export async function analyzeUrl(
     }
   }
 
-  // ── Reputation ─────────────────────────────────────────────────────────────
+
   if (options.reputation) {
     const registry = deps.registry ?? createReputationRegistry(config);
     const results = await registry.checkUrl(reputationTarget);

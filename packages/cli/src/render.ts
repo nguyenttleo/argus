@@ -1,7 +1,4 @@
-/**
- * Pure terminal renderer for a {@link Report}. Kept side-effect-free (returns a
- * string, takes an explicit `color` flag) so it can be unit-tested.
- */
+
 
 import type { Report, Severity, Verdict } from '@argus/shared';
 
@@ -97,7 +94,7 @@ export function renderReport(report: Report, opts: { color?: boolean } = {}): st
     if (info.length) out.push('');
   }
 
-  // kind-specific quick facts
+
   if (report.detail.kind === 'url') {
     const d = report.detail;
     const facts: string[] = [];
@@ -140,7 +137,7 @@ function wrap(text: string, width: number, indent: string): string {
   return lines.join('\n' + indent);
 }
 
-/** Exit code by verdict - handy in CI pipelines. */
+
 export function exitCodeFor(verdict: Verdict): number {
   return verdict === 'malicious' ? 2 : verdict === 'suspicious' ? 1 : 0;
 }

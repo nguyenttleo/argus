@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { safeFetch, extractTitle, requestOnce } from './fetcher.ts';
 
-// ── Guard wiring: safeFetch must refuse forbidden targets without connecting ──
+
 
 test('safeFetch refuses non-http(s) schemes', async () => {
   const r = await safeFetch('file:///etc/passwd');
@@ -25,16 +25,16 @@ test('safeFetch rejects an invalid URL', async () => {
   assert.equal(r.error, 'invalid URL');
 });
 
-// ── Pure helper ───────────────────────────────────────────────────────────────
+
 
 test('extractTitle pulls and collapses the <title>', () => {
   assert.equal(extractTitle('<html><head><title>  Hello\n World </title>'), 'Hello World');
   assert.equal(extractTitle('<html>no title</html>'), undefined);
 });
 
-// ── Transport mechanics: requestOnce against a real local server ──────────────
-// (the guard is bypassed here on purpose - we are testing the byte-reading layer,
-//  not the decision layer, which has its own suite.)
+
+
+
 
 let server: http.Server;
 let port = 0;
@@ -52,7 +52,7 @@ before(async () => {
       res.end();
     } else if (req.url === '/big') {
       res.writeHead(200, { 'content-type': 'application/octet-stream' });
-      res.end(Buffer.alloc(10_000, 0x41)); // 10 KB, exceeds 1 KB cap
+      res.end(Buffer.alloc(10_000, 0x41));
     } else {
       res.writeHead(200, { 'content-type': 'text/html' });
       res.end('<title>Local</title><body>ok</body>');

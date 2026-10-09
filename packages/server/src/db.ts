@@ -1,11 +1,4 @@
-/**
- * Persistence via Node's built-in SQLite (`node:sqlite`) - real relational storage
- * matching the spec's data model (scans / url_scans / file_scans / iocs), zero native
- * deps, no DB server. The full report JSON is kept alongside the queryable columns so
- * the detail view is a single lookup while IOCs/domains stay searchable.
- *
- * Privacy: only an HMAC of the client IP is stored (`ip_hash`), never the raw IP.
- */
+
 
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
@@ -116,9 +109,7 @@ export class ArgusDb {
     } catch (e) {
       try {
         this.#db.exec('ROLLBACK');
-      } catch {
-        /* ignore rollback failure */
-      }
+      } catch {}
       throw e;
     }
   }

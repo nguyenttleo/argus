@@ -1,30 +1,21 @@
-/**
- * IP address parsing + special-range classification.
- *
- * This is the factual core of the SSRF guard: given an IP literal, decide whether
- * it is publicly routable or whether it points at something an attacker could abuse
- * (loopback, RFC-1918 private space, link-local incl. the `169.254.169.254` cloud
- * metadata endpoint, CGNAT, multicast, documentation/benchmark ranges, …).
- *
- * Pure + dependency-free so it can be exhaustively unit-tested.
- */
+
 
 import net from 'node:net';
 
 export interface IpClassification {
   ip: string;
   family: 4 | 6;
-  /** True only if the address is a normal, publicly-routable unicast address. */
+
   public: boolean;
-  /** Machine-readable bucket, e.g. `loopback`, `private`, `link-local`. */
+
   category: string;
-  /** Human explanation, used in signal/guard messages. */
+
   reason: string;
 }
 
-// ── IPv4 ────────────────────────────────────────────────────────────────────
 
-/** Parse canonical dotted-decimal IPv4 → unsigned 32-bit int, or null. */
+
+
 export function ipv4ToInt(ip: string): number | null {
   const parts = ip.split('.');
   if (parts.length !== 4) return null;
@@ -50,7 +41,7 @@ function v4(cidr: string, category: string, reason: string): V4Range {
   return { base: ipv4ToInt(addr!)!, prefix: Number(pfx), category, reason };
 }
 
-/** RFC-special / non-routable IPv4 blocks Argus refuses to fetch. */
+
 const V4_SPECIAL: V4Range[] = [
   v4('0.0.0.0/8', 'this-network', '"this host" range (0.0.0.0/8)'),
   v4('10.0.0.0/8', 'private', 'RFC-1918 private network (10/8)'),
@@ -91,17 +82,17 @@ function classifyV4(ip: string): IpClassification {
   return { ip, family: 4, public: true, category: 'public', reason: 'publicly-routable unicast' };
 }
 
-// ── IPv6 ────────────────────────────────────────────────────────────────────
 
-/** Expand an IPv6 string (incl. `::` and embedded IPv4) → 128-bit BigInt, or null. */
+
+
 export function ipv6ToBigInt(ip: string): bigint | null {
   if (net.isIPv6(ip) === false) return null;
   let str = ip;
-  // Strip zone id (fe80::1%eth0)
+
   const pct = str.indexOf('%');
   if (pct !== -1) str = str.slice(0, pct);
 
-  // Handle embedded IPv4 tail (e.g. ::ffff:1.2.3.4)
+
   let tailHextets: string[] = [];
   const lastColon = str.lastIndexOf(':');
   const tail = str.slice(lastColon + 1);
@@ -163,16 +154,16 @@ function v6InRange(ip: bigint, r: V6Range): boolean {
   return ip >> shift === r.base >> shift;
 }
 
-// Top-96-bit signatures (i.e. address >> 32) of the two prefixes that embed IPv4.
-const V4_MAPPED_SIG = ipv6ToBigInt('::ffff:0:0')! >> 32n; // ::ffff:0:0/96
-const NAT64_SIG = ipv6ToBigInt('64:ff9b::')! >> 32n; // 64:ff9b::/96
+
+const V4_MAPPED_SIG = ipv6ToBigInt('::ffff:0:0')! >> 32n;
+const NAT64_SIG = ipv6ToBigInt('64:ff9b::')! >> 32n;
 
 function classifyV6(ip: string): IpClassification {
   const n = ipv6ToBigInt(ip);
   if (n === null) {
     return { ip, family: 6, public: false, category: 'invalid', reason: 'unparseable IPv6' };
   }
-  // IPv4-mapped (::ffff:a.b.c.d) and NAT64 (64:ff9b::/96) embed an IPv4 - classify that.
+
   const high96 = n >> 32n;
   if (high96 === V4_MAPPED_SIG || high96 === NAT64_SIG) {
     const v4int = Number(n & 0xffffffffn) >>> 0;
@@ -194,9 +185,9 @@ function classifyV6(ip: string): IpClassification {
   return { ip, family: 6, public: true, category: 'public', reason: 'publicly-routable unicast' };
 }
 
-// ── Public API ───────────────────────────────────────────────────────────────
 
-/** Classify any IP literal (v4 or v6). Throws nothing - returns invalid for junk. */
+
+
 export function classifyIp(ip: string): IpClassification {
   const fam = net.isIP(ip);
   if (fam === 4) return classifyV4(ip);
@@ -208,7 +199,7 @@ export function isPublicIp(ip: string): boolean {
   return classifyIp(ip).public;
 }
 
-/** Is `host` already an IP literal (vs a DNS name)? */
+
 export function isIpLiteral(host: string): boolean {
   return net.isIP(host) !== 0;
 }

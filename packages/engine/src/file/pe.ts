@@ -1,15 +1,4 @@
-/**
- * A real (bounded, defensive) PE parser. Beyond "this is an EXE", it extracts the
- * signals malware analysts actually pivot on:
- *   - **imphash** - md5 of the ordered import list (pefile's algorithm). Identical
- *     imphashes cluster samples of the same family/builder; it's a standard IOC.
- *   - imported DLLs + suspicious API surface (injection / download-exec / anti-debug)
- *   - per-section entropy (a single packed/high-entropy section is a packer tell)
- *   - subsystem, DLL/driver flags, Authenticode-signature presence, resource/TLS dirs.
- *
- * Every read is bounds-checked; a malformed or hostile PE returns partial data or
- * undefined, never a throw. Bytes are parsed, never executed.
- */
+
 
 import { createHash } from 'node:crypto';
 import type { PeDetail, PeSection } from '@argus/shared';
@@ -68,9 +57,9 @@ interface Sections {
 }
 
 export function parsePeDetail(buf: Uint8Array): PeDetail | undefined {
-  if (u16(buf, 0) !== 0x5a4d) return undefined; // 'MZ'
+  if (u16(buf, 0) !== 0x5a4d) return undefined;
   const peOff = u32(buf, 0x3c);
-  if (peOff <= 0 || peOff + 24 > buf.length || u32(buf, peOff) !== 0x00004550) return undefined; // 'PE\0\0'
+  if (peOff <= 0 || peOff + 24 > buf.length || u32(buf, peOff) !== 0x00004550) return undefined;
 
   const machineCode = u16(buf, peOff + 4);
   const numSections = u16(buf, peOff + 6);
@@ -91,7 +80,7 @@ export function parsePeDetail(buf: Uint8Array): PeDetail | undefined {
   const dir = (i: number): { rva: number; size: number } =>
     i < numDirs ? { rva: u32(buf, dirsOff + i * 8), size: u32(buf, dirsOff + i * 8 + 4) } : { rva: 0, size: 0 };
 
-  // ── sections ──
+
   const secStart = optOff + sizeOfOptional;
   const sections: PeSection[] = [];
   const rawSecs: { va: number; vsize: number; ptr: number; rsize: number }[] = [];
@@ -118,7 +107,7 @@ export function parsePeDetail(buf: Uint8Array): PeDetail | undefined {
     },
   };
 
-  // ── imports + imphash ──
+
   const importDir = dir(1);
   const imp = parseImports(buf, secs, importDir.rva, isPlus);
 
@@ -170,7 +159,7 @@ function parseImports(
     const iltRva = u32(buf, off);
     const nameRva = u32(buf, off + 12);
     const iatRva = u32(buf, off + 16);
-    if (iltRva === 0 && nameRva === 0 && iatRva === 0) break; // null terminator
+    if (iltRva === 0 && nameRva === 0 && iatRva === 0) break;
 
     const nameOff = secs.toOffset(nameRva);
     let dllName = nameOff >= 0 ? readCString(buf, nameOff, 256) : '';
@@ -187,7 +176,7 @@ function parseImports(
       if (entOff + tsize > buf.length) break;
       const lo = u32(buf, entOff);
       const hi = isPlus ? u32(buf, entOff + 4) : 0;
-      if (lo === 0 && hi === 0) break; // end of thunks
+      if (lo === 0 && hi === 0) break;
       const byOrdinal = isPlus ? (hi & 0x80000000) !== 0 : (lo & 0x80000000) !== 0;
       let func: string;
       if (byOrdinal) {

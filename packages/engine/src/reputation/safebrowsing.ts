@@ -1,7 +1,7 @@
 import type { ReputationResult } from '@argus/shared';
 import { fetchJson, unavailable, type ReputationProvider } from './provider.ts';
 
-/** Google Safe Browsing v4 `threatMatches:find`. Key-gated. */
+
 const ENDPOINT = 'https://safebrowsing.googleapis.com/v4/threatMatches:find';
 
 interface SbResponse {

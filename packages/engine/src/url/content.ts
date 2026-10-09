@@ -1,12 +1,4 @@
-/**
- * Static analysis of fetched page HTML - the kind of inspection urlscan.io does,
- * but performed on bytes Argus already pulled through the SSRF-safe fetcher and
- * NEVER executed. Heuristic regex parsing (no DOM, no JS execution) surfaces the
- * tells of a credential-harvesting page:
- *   - password inputs + where the form actually submits (cross-domain = exfil)
- *   - a known brand named in the page while the domain is something else
- *   - meta-refresh hops, hidden iframes, heavy external script, JS obfuscation.
- */
+
 
 import { parse as parseDomain } from 'tldts';
 import type { ContentInfo, Signal } from '@argus/shared';
@@ -26,7 +18,7 @@ export function analyzeContent(html: string, baseUrl: string): ContentInfo {
 
   const hasPasswordField = /<input\b[^>]*\btype\s*=\s*["']?password\b/i.test(html);
 
-  // form actions
+
   const formActions: string[] = [];
   let crossDomainForm: string | undefined;
   for (const m of html.matchAll(/<form\b[^>]*>/gi)) {
@@ -40,7 +32,7 @@ export function analyzeContent(html: string, baseUrl: string): ContentInfo {
     }
   }
 
-  // brand names appearing in visible-ish content (title + body text), minus tags
+
   const text = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').toLowerCase();
   const brandsInContent = Object.keys(BRANDS).filter((b) => b.length >= 4 && new RegExp(`\\b${b}\\b`).test(text));
 
@@ -107,9 +99,9 @@ export function contentSignals(c: ContentInfo, ctx: { registrableDomain?: string
     });
   }
 
-  // A brand named on a credential-collection page whose domain is unrelated to that
-  // brand. We require the password field: merely *mentioning* a brand (as countless
-  // legitimate pages do) is not impersonation - pairing it with a login is.
+
+
+
   if (ctx.registrableDomain && c.hasPasswordField) {
     const ownSld = ctx.registrableDomain.split('.')[0] ?? '';
     const impersonated = c.brandsInContent.filter((b) => !ownSld.includes(b) && !ctx.registrableDomain!.includes(b));

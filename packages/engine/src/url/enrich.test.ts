@@ -6,7 +6,7 @@ import { analyzeContent, contentSignals } from './content.ts';
 import { analyzeUrl } from './analyze.ts';
 import type { FetchResult } from './fetcher.ts';
 
-// ── DNS ───────────────────────────────────────────────────────────────────────
+
 
 const fakeDns = (opts: { mx?: string[]; txt?: string[]; dmarc?: string[] }): DnsResolver => ({
   resolveMx: async () => (opts.mx ?? []).map((exchange, i) => ({ exchange, priority: i })),
@@ -29,7 +29,7 @@ test('dnsSignals flags missing email auth, weighted up when impersonating a bran
   assert.ok(brand[0]!.weight > plain[0]!.weight);
 });
 
-// ── RDAP domain age ────────────────────────────────────────────────────────────
+
 
 const rdapFetch = (json: unknown, status = 200): typeof fetch =>
   (async () => new Response(JSON.stringify(json), { status })) as unknown as typeof fetch;
@@ -69,7 +69,7 @@ test('rdap degrades gracefully on network failure', async () => {
   assert.equal(rdapSignals(info).length, 0);
 });
 
-// ── Content analysis ───────────────────────────────────────────────────────────
+
 
 const PHISH_HTML = `<!doctype html><html><head><title>PayPal - Log In</title></head>
 <body><h1>Sign in to your paypal account</h1>
@@ -106,7 +106,7 @@ test('benign page produces no content risk signals', () => {
   assert.deepEqual(contentSignals(c, { registrableDomain: 'myblog.example' }), []);
 });
 
-// ── Integration ────────────────────────────────────────────────────────────────
+
 
 test('analyzeUrl fuses content + rdap into a decisive malicious verdict', async () => {
   const fetchImpl = (async () =>

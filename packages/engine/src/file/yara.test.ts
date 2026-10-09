@@ -4,15 +4,15 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseYaraRules, scanBytes, compileAndScan } from './yara.ts';
 
-// Malicious fixtures are decoded at runtime (base64 / concatenation) so this source
-// file never contains a contiguous live signature - otherwise endpoint AV (Windows
-// Defender) quarantines the test file. This is the same reason real AV/YARA projects
-// ship their samples encoded.
+
+
+
+
 const EICAR = Buffer.from(
   'WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo=',
   'base64',
 ).toString('latin1');
-const WEBSHELL = '<' + '?php @' + 'eval($' + '_POST["x"]); ?>'; // broken up on purpose
+const WEBSHELL = '<' + '?php @' + 'eval($' + '_POST["x"]); ?>';
 
 const builtinPath = fileURLToPath(new URL('../../rules/builtin.yar', import.meta.url));
 const builtin = readFileSync(builtinPath, 'utf8');
@@ -70,7 +70,7 @@ test('a benign text file matches nothing', () => {
   assert.deepEqual(matches, []);
 });
 
-// ── engine feature coverage with focused inline rules ──
+
 
 test('hex strings with wildcards and jumps', () => {
   const rule = `rule H { strings: $h = { 4D 5A ?? ?? [2-6] FF FE } condition: $h }`;

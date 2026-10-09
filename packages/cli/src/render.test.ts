@@ -16,7 +16,7 @@ test('renders a malicious URL report with verdict, score and signals (no color)'
   assert.match(text, /\/100/);
   assert.match(text, /Risk signals/);
   assert.match(text, /Embedded credentials/);
-  // no ANSI escapes when color is off
+
   assert.ok(!text.includes('\x1b['), 'should contain no ANSI codes when color disabled');
 });
 
