@@ -1,5 +1,3 @@
-
-
 import type { Report, Severity, Verdict } from '@argus/shared';
 
 const C = {
@@ -94,7 +92,6 @@ export function renderReport(report: Report, opts: { color?: boolean } = {}): st
     if (info.length) out.push('');
   }
 
-
   if (report.detail.kind === 'url') {
     const d = report.detail;
     const facts: string[] = [];
@@ -136,7 +133,6 @@ function wrap(text: string, width: number, indent: string): string {
   if (line) lines.push(line);
   return lines.join('\n' + indent);
 }
-
 
 export function exitCodeFor(verdict: Verdict): number {
   return verdict === 'malicious' ? 2 : verdict === 'suspicious' ? 1 : 0;

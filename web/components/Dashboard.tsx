@@ -196,23 +196,8 @@ export default function Dashboard({
       </main>
 
       <footer className="fixed inset-x-0 bottom-0 z-50 h-7 border-t border-border bg-surface">
-        <div className="mx-auto flex h-full max-w-6xl items-center justify-between gap-3 px-2 text-[12px]">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="px-2 font-bold text-bg-deep" style={{ background: busy ? '#fd971f' : '#a6e22e' }}>
-              {busy ? 'SCAN' : 'NORMAL'}
-            </span>
-            <span className="text-muted">visitor@argus</span>
-            <span className="hidden min-w-0 truncate sm:block">
-              {busy ? (
-                <span style={{ color: '#fd971f' }}>scanning...</span>
-              ) : report ? (
-                <span style={{ color: VERDICT[report.verdict].hex }}>{VERDICT[report.verdict].label.toLowerCase()}</span>
-              ) : (
-                <span className="text-muted">ready</span>
-              )}
-            </span>
-          </div>
-          <span className="shrink-0 text-muted">engine v{health?.engineVersion ?? '1.0.0'}</span>
+        <div className="mx-auto flex h-full max-w-6xl items-center justify-end gap-3 px-2 text-[12px]">
+          <span className="shrink-0 text-muted">engine v{health?.engineVersion ?? '1.2.7'}</span>
         </div>
       </footer>
     </div>

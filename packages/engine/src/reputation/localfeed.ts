@@ -1,16 +1,12 @@
 import type { ReputationResult } from '@argus/shared';
 import type { ReputationProvider } from './provider.ts';
 
-
-
-
 const BAD_HOSTS = new Map<string, string>([
   ['testsafebrowsing.appspot.com', "Google's official Safe Browsing test site"],
   ['malware.testing.google.test', "Google's malware-test hostname"],
   ['phishing-demo.argus.test', 'Argus bundled phishing demo host'],
   ['secure-paypa1-login.tk', 'Argus bundled phishing demo host'],
 ]);
-
 
 const BAD_HASHES = new Map<string, string>([
   ['275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f', 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE'],

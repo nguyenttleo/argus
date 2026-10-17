@@ -1,7 +1,6 @@
 import type { ReputationResult } from '@argus/shared';
 import { fetchJson, unavailable, type ReputationProvider } from './provider.ts';
 
-
 const HOST_ENDPOINT = 'https://urlhaus-api.abuse.ch/v1/host/';
 
 interface UrlhausResponse {

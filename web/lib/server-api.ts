@@ -1,4 +1,3 @@
-
 export const ARGUS_API = process.env.ARGUS_API ?? 'http://127.0.0.1:8089';
 
 const UNREACHABLE_MESSAGE =

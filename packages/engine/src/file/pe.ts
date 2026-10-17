@@ -1,5 +1,3 @@
-
-
 import { createHash } from 'node:crypto';
 import type { PeDetail, PeSection } from '@argus/shared';
 import { shannonEntropy } from './hash.ts';
@@ -80,7 +78,6 @@ export function parsePeDetail(buf: Uint8Array): PeDetail | undefined {
   const dir = (i: number): { rva: number; size: number } =>
     i < numDirs ? { rva: u32(buf, dirsOff + i * 8), size: u32(buf, dirsOff + i * 8 + 4) } : { rva: 0, size: 0 };
 
-
   const secStart = optOff + sizeOfOptional;
   const sections: PeSection[] = [];
   const rawSecs: { va: number; vsize: number; ptr: number; rsize: number }[] = [];
@@ -106,7 +103,6 @@ export function parsePeDetail(buf: Uint8Array): PeDetail | undefined {
       return -1;
     },
   };
-
 
   const importDir = dir(1);
   const imp = parseImports(buf, secs, importDir.rva, isPlus);

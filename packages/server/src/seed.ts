@@ -1,5 +1,3 @@
-
-
 import { analyzeFile, analyzeUrl } from '@argus/engine';
 import { ArgusDb } from './db.ts';
 import { loadServerConfig } from './config.ts';
@@ -25,7 +23,6 @@ export async function seed(db: ArgusDb): Promise<number> {
   for (const r of reports) db.insertReport(r, 'seed');
   return reports.length;
 }
-
 
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('seed.ts')) {
   const config = loadServerConfig();

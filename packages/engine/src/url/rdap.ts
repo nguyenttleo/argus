@@ -1,5 +1,3 @@
-
-
 import type { RdapInfo, Signal } from '@argus/shared';
 
 const ENDPOINT = 'https://rdap.org/domain/';

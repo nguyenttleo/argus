@@ -1,5 +1,3 @@
-
-
 import { createHmac } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -15,7 +13,7 @@ import {
   hashBytes,
   TtlCache,
 } from '@argus/engine';
-import type { Report } from '@argus/shared';
+import { ENGINE_VERSION, type Report } from '@argus/shared';
 import { ArgusDb } from './db.ts';
 import { Quarantine, resolveQuarantineKey } from './quarantine.ts';
 import type { ServerConfig } from './config.ts';
@@ -38,7 +36,6 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
   const registry = createReputationRegistry(config);
   const rules = loadBuiltinRules().rules;
 
-
   const scanCache = new TtlCache<Report>();
   const quarantine =
     deps.quarantine !== undefined
@@ -54,7 +51,6 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
   const hashIp = (ip: string): string =>
     createHmac('sha256', config.ipHashSecret).update(ip).digest('hex').slice(0, 32);
 
-
   if (quarantine) {
     const timer = setInterval(() => {
       try {
@@ -66,7 +62,6 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
   }
 
   await app.register(cors, { origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(',') });
-
 
   await app.register(multipart, {
     limits: { fileSize: config.maxUploadBytes, files: 1 },
@@ -95,11 +90,10 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
     });
   });
 
-
   app.get('/api/health', async () => ({
     status: 'ok',
     service: 'argus',
-    engineVersion: '1.0.0',
+    engineVersion: ENGINE_VERSION,
     rulesLoaded: rules.length,
     reputationProviders: registry.configuredProviders(),
     quarantine: quarantine ? 'enabled' : 'hash-only',
@@ -117,7 +111,6 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
       'GET  /api/health',
     ],
   }));
-
 
   app.post('/api/scan/url', { preHandler: scanRateLimit }, async (req, reply) => {
     const body = (req.body ?? {}) as { url?: unknown; fetch?: unknown; reputation?: unknown; fresh?: unknown };
@@ -149,7 +142,6 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
     db.insertReport(report, hashIp(req.ip));
     return report;
   });
-
 
   app.post('/api/scan/file', { preHandler: scanRateLimit }, async (req, reply) => {
     let data;
@@ -190,7 +182,6 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
       { config, registry, rules },
     );
 
-
     if (quarantine) {
       try {
         quarantine.store(bytesU8, sha256);
@@ -201,7 +192,6 @@ export async function buildApp(config: ServerConfig, deps: AppDeps = {}): Promis
     db.insertReport(report, hashIp(req.ip));
     return report;
   });
-
 
   app.get('/api/scan/:id', async (req, reply) => {
     const { id } = req.params as { id: string };

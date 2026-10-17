@@ -1,4 +1,3 @@
-
 export class TtlCache<V> {
   #map = new Map<string, { value: V; expires: number }>();
   #now: () => number;

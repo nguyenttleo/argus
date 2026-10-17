@@ -1,6 +1,5 @@
 import type { ReputationResult } from '@argus/shared';
 
-
 export interface ReputationProvider {
   name: string;
 
@@ -12,7 +11,6 @@ export interface ReputationProvider {
 export function unavailable(provider: string, detail: string): ReputationResult {
   return { provider, available: false, listed: false, detail, source: 'unavailable' };
 }
-
 
 export async function fetchJson(
   url: string,

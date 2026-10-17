@@ -1,5 +1,3 @@
-
-
 import net from 'node:net';
 
 export interface IpClassification {
@@ -12,9 +10,6 @@ export interface IpClassification {
 
   reason: string;
 }
-
-
-
 
 export function ipv4ToInt(ip: string): number | null {
   const parts = ip.split('.');
@@ -40,7 +35,6 @@ function v4(cidr: string, category: string, reason: string): V4Range {
   const [addr, pfx] = cidr.split('/');
   return { base: ipv4ToInt(addr!)!, prefix: Number(pfx), category, reason };
 }
-
 
 const V4_SPECIAL: V4Range[] = [
   v4('0.0.0.0/8', 'this-network', '"this host" range (0.0.0.0/8)'),
@@ -82,16 +76,12 @@ function classifyV4(ip: string): IpClassification {
   return { ip, family: 4, public: true, category: 'public', reason: 'publicly-routable unicast' };
 }
 
-
-
-
 export function ipv6ToBigInt(ip: string): bigint | null {
   if (net.isIPv6(ip) === false) return null;
   let str = ip;
 
   const pct = str.indexOf('%');
   if (pct !== -1) str = str.slice(0, pct);
-
 
   let tailHextets: string[] = [];
   const lastColon = str.lastIndexOf(':');
@@ -154,7 +144,6 @@ function v6InRange(ip: bigint, r: V6Range): boolean {
   return ip >> shift === r.base >> shift;
 }
 
-
 const V4_MAPPED_SIG = ipv6ToBigInt('::ffff:0:0')! >> 32n;
 const NAT64_SIG = ipv6ToBigInt('64:ff9b::')! >> 32n;
 
@@ -185,9 +174,6 @@ function classifyV6(ip: string): IpClassification {
   return { ip, family: 6, public: true, category: 'public', reason: 'publicly-routable unicast' };
 }
 
-
-
-
 export function classifyIp(ip: string): IpClassification {
   const fam = net.isIP(ip);
   if (fam === 4) return classifyV4(ip);
@@ -198,7 +184,6 @@ export function classifyIp(ip: string): IpClassification {
 export function isPublicIp(ip: string): boolean {
   return classifyIp(ip).public;
 }
-
 
 export function isIpLiteral(host: string): boolean {
   return net.isIP(host) !== 0;

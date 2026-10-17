@@ -1,5 +1,3 @@
-
-
 import { parse as parseDomain } from 'tldts';
 import { domainToUnicode } from 'node:url';
 import type { Signal } from '@argus/shared';
@@ -33,9 +31,6 @@ export interface LexicalResult {
   signals: Signal[];
 }
 
-
-
-
 export function levenshtein(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
@@ -54,7 +49,6 @@ export function levenshtein(a: string, b: string): number {
   return prev[n]!;
 }
 
-
 const CONFUSABLES: Record<string, string> = {
   а: 'a', е: 'e', о: 'o', р: 'p', с: 'c', у: 'y', х: 'x', ѕ: 's', і: 'i', ј: 'j',
   к: 'k', м: 'm', н: 'h', т: 't', в: 'b', г: 'r', д: 'd', ӏ: 'l',
@@ -63,13 +57,11 @@ const CONFUSABLES: Record<string, string> = {
   '@': 'a', $: 's',
 };
 
-
 export function skeleton(s: string): string {
   let out = '';
   for (const ch of s.toLowerCase()) out += CONFUSABLES[ch] ?? ch;
   return out;
 }
-
 
 function scriptsOf(s: string): Set<string> {
   const scripts = new Set<string>();
@@ -85,8 +77,6 @@ function scriptsOf(s: string): Set<string> {
 function sig(s: Omit<Signal, 'confidence'> & { confidence?: number }): Signal {
   return { confidence: 0.8, ...s };
 }
-
-
 
 export function analyzeLexical(rawUrl: string): LexicalResult {
   const url = new URL(rawUrl);
@@ -116,7 +106,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
   const fullPath = (url.pathname + url.search).toLowerCase();
   const hostForKeywords = host.toLowerCase();
 
-
   if (parsed.scheme !== 'http' && parsed.scheme !== 'https') {
     const scriptable = parsed.scheme === 'javascript' || parsed.scheme === 'vbscript';
     add({
@@ -133,7 +122,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-
   if (url.username || url.password) {
     add({
       id: 'url.userinfo',
@@ -147,7 +135,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-
   if (isIpHost) {
     add({
       id: 'url.ip_host',
@@ -160,7 +147,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
       evidence: { ip: host },
     });
   }
-
 
   const labels = host.split('.');
   const puny = labels.filter((l) => l.startsWith('xn--'));
@@ -191,7 +177,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-
   if (sld && !isIpHost) {
     const skel = skeleton(sld);
     let typo: { brand: string; brandDomain: string; dist: number } | undefined;
@@ -218,7 +203,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
       });
     }
 
-
     const subAndSld = `${td.subdomain ?? ''}`.toLowerCase();
     for (const [brand, dom] of Object.entries(BRANDS)) {
       if (registrable === dom) continue;
@@ -239,7 +223,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     }
   }
 
-
   if (tld && SUSPICIOUS_TLDS.has(tld)) {
     add({
       id: 'url.suspicious_tld',
@@ -252,7 +235,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
       evidence: { tld },
     });
   }
-
 
   const subLabels = (td.subdomain ?? '').split('.').filter(Boolean);
   if (!isIpHost && subLabels.length >= 3) {
@@ -269,7 +251,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-
   if (registrable && URL_SHORTENERS.has(registrable)) {
     add({
       id: 'url.shortener',
@@ -282,7 +263,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
       evidence: { shortener: registrable },
     });
   }
-
 
   const kwHits = PHISHING_KEYWORDS.filter(
     (k) => hostForKeywords.includes(k) || fullPath.includes(k),
@@ -301,7 +281,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-
   const hyphens = (sld.match(/-/g) ?? []).length;
   if (hyphens >= 2 && !sld.startsWith('xn--')) {
     add({
@@ -316,7 +295,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-
   if (url.port && url.port !== '80' && url.port !== '443') {
     add({
       id: 'url.nonstandard_port',
@@ -329,7 +307,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
       evidence: { port: url.port },
     });
   }
-
 
   const lastSeg = url.pathname.split('/').pop() ?? '';
   const ext = lastSeg.includes('.') ? lastSeg.split('.').pop()!.toLowerCase() : '';
@@ -349,7 +326,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     });
   }
 
-
   for (const [k, v] of url.searchParams) {
     if (REDIRECT_PARAMS.has(k.toLowerCase()) && /^https?:|%2f%2f|\/\//i.test(v)) {
       add({
@@ -366,7 +342,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
     }
   }
 
-
   if (rawUrl.length > 120) {
     const w = Math.min(8 + Math.floor((rawUrl.length - 120) / 60) * 4, 20);
     add({
@@ -380,7 +355,6 @@ export function analyzeLexical(rawUrl: string): LexicalResult {
       evidence: { length: rawUrl.length },
     });
   }
-
 
   if (registrable && POPULAR_DOMAINS.has(registrable)) {
     add({

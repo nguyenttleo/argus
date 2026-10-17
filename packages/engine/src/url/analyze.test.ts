@@ -136,7 +136,7 @@ test('invalid URL rejects with InvalidUrlError', async () => {
 test('report shape is complete', async () => {
   const r = await analyzeUrl('https://www.google.com/', {}, fixedDeps);
   assert.equal(r.id, 'test-id');
-  assert.equal(r.engineVersion, '1.0.0');
+  assert.equal(r.engineVersion, '1.2.7');
   assert.equal(r.createdAt, '2026-01-01T00:00:00.000Z');
   assert.ok(typeof r.score === 'number');
   assert.ok(typeof r.confidence === 'number');

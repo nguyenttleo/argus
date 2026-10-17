@@ -1,5 +1,3 @@
-
-
 export interface DetectedType {
   type: string;
   label: string;
@@ -17,7 +15,6 @@ interface Sig extends DetectedType {
 }
 
 const b = (s: string): number[] => [...s].map((c) => c.charCodeAt(0));
-
 
 const SIGNATURES: Sig[] = [
   { type: 'pe', label: 'Windows PE executable (EXE/DLL)', mime: 'application/vnd.microsoft.portable-executable', exts: ['exe', 'dll', 'sys', 'scr', 'ocx'], family: 'executable', offset: 0, bytes: b('MZ') },

@@ -1,5 +1,3 @@
-
-
 import { parse as parseDomain } from 'tldts';
 import type { ContentInfo, Signal } from '@argus/shared';
 import { BRANDS } from './data.ts';
@@ -18,7 +16,6 @@ export function analyzeContent(html: string, baseUrl: string): ContentInfo {
 
   const hasPasswordField = /<input\b[^>]*\btype\s*=\s*["']?password\b/i.test(html);
 
-
   const formActions: string[] = [];
   let crossDomainForm: string | undefined;
   for (const m of html.matchAll(/<form\b[^>]*>/gi)) {
@@ -31,7 +28,6 @@ export function analyzeContent(html: string, baseUrl: string): ContentInfo {
       crossDomainForm = action;
     }
   }
-
 
   const text = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').toLowerCase();
   const brandsInContent = Object.keys(BRANDS).filter((b) => b.length >= 4 && new RegExp(`\\b${b}\\b`).test(text));
@@ -98,9 +94,6 @@ export function contentSignals(c: ContentInfo, ctx: { registrableDomain?: string
       confidence: 0.55,
     });
   }
-
-
-
 
   if (ctx.registrableDomain && c.hasPasswordField) {
     const ownSld = ctx.registrableDomain.split('.')[0] ?? '';

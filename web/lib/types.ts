@@ -1,6 +1,3 @@
-
-
-
 export type Verdict = 'safe' | 'suspicious' | 'malicious';
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 export type ScanKind = 'url' | 'file';

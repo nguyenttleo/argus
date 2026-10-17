@@ -1,5 +1,3 @@
-
-
 import dnsPromises from 'node:dns/promises';
 import type { DnsInfo, Signal } from '@argus/shared';
 
@@ -60,8 +58,6 @@ export function dnsSignals(
   const out: Signal[] = [];
   if (ctx.isIpHost || !ctx.registrableDomain) return out;
   if (dns.errors.length > 0) return out;
-
-
 
   if (!dns.hasSpf && !dns.hasDmarc) {
     out.push({

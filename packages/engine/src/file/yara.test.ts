@@ -4,10 +4,6 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseYaraRules, scanBytes, compileAndScan } from './yara.ts';
 
-
-
-
-
 const EICAR = Buffer.from(
   'WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo=',
   'base64',
@@ -69,8 +65,6 @@ test('a benign text file matches nothing', () => {
   const { matches } = compileAndScan(builtin, buf('Dear team, please find the meeting notes attached. Thanks!'));
   assert.deepEqual(matches, []);
 });
-
-
 
 test('hex strings with wildcards and jumps', () => {
   const rule = `rule H { strings: $h = { 4D 5A ?? ?? [2-6] FF FE } condition: $h }`;

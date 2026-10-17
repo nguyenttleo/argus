@@ -31,7 +31,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={mono.variable}>
       <body>
-        <div className="crt" aria-hidden />
         <div className="frame" aria-hidden />
         {children}
       </body>

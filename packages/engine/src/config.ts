@@ -1,5 +1,3 @@
-
-
 export interface EngineConfig {
   googleSafeBrowsingKey?: string;
   virusTotalKey?: string;

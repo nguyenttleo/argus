@@ -1,5 +1,3 @@
-
-
 import dnsPromises from 'node:dns/promises';
 import { classifyIp, isIpLiteral } from './ip.ts';
 
@@ -33,7 +31,6 @@ const defaultResolver: Resolver = async (host) => {
   return addrs.map((a) => ({ address: a.address, family: a.family }));
 };
 
-
 const BLOCKED_NAMES = new Set(['localhost', 'localhost.localdomain', 'ip6-localhost', 'ip6-loopback']);
 
 export async function guardHost(host: string, resolver: Resolver = defaultResolver): Promise<GuardDecision> {
@@ -49,7 +46,6 @@ export async function guardHost(host: string, resolver: Resolver = defaultResolv
     return { allowed: false, host, resolvedIps: [], reason: `refused: "${host}" is an internal-only domain`, category: 'internal-tld' };
   }
 
-
   if (isIpLiteral(host)) {
     const c = classifyIp(host);
     if (!c.public) {
@@ -64,7 +60,6 @@ export async function guardHost(host: string, resolver: Resolver = defaultResolv
       reason: `IP literal ${host} is publicly routable`,
     };
   }
-
 
   let addrs: ResolvedAddr[];
   try {

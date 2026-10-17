@@ -1,12 +1,8 @@
-
-
 import type { Report, Severity, Signal, Verdict } from './types.ts';
 import { SEVERITY_RANK } from './types.ts';
 
-
 export const THRESHOLD_SUSPICIOUS = 25;
 export const THRESHOLD_MALICIOUS = 60;
-
 
 const DECISIVE_CONFIDENCE = 0.85;
 
@@ -24,7 +20,6 @@ function clamp01(x: number): number {
   if (Number.isNaN(x)) return 0;
   return x < 0 ? 0 : x > 1 ? 1 : x;
 }
-
 
 export function signalProbability(s: Signal): number {
   return clamp01((s.weight / 100) * s.confidence);
@@ -46,8 +41,6 @@ export function scoreSignals(signals: Signal[]): ScoreResult {
   const riskP = noisyOr(risk.map(signalProbability));
   const mitP = mit.reduce((acc, s) => acc * (1 - signalProbability(s)), 1);
 
-
-
   const finalP = decisive ? Math.max(riskP, DECISIVE_FLOOR) : riskP * mitP;
   const score = Math.round(clamp01(finalP) * 100);
 
@@ -61,7 +54,6 @@ export function scoreSignals(signals: Signal[]): ScoreResult {
   return { score, verdict, confidence: verdictConfidence(signals, score, decisive), decisive };
 }
 
-
 function verdictConfidence(signals: Signal[], score: number, decisive: boolean): number {
   if (decisive) return 0.97;
   const scoring = signals.filter((s) => s.weight > 0);
@@ -69,7 +61,6 @@ function verdictConfidence(signals: Signal[], score: number, decisive: boolean):
 
   const avgConf = scoring.reduce((a, s) => a + s.confidence, 0) / scoring.length;
   const corroboration = Math.min(scoring.length, 6) / 6;
-
 
   const distToBoundary = Math.min(
     Math.abs(score - THRESHOLD_SUSPICIOUS),
@@ -81,14 +72,11 @@ function verdictConfidence(signals: Signal[], score: number, decisive: boolean):
   return clamp01(c);
 }
 
-
-
 export const VERDICT_LABEL: Record<Verdict, string> = {
   safe: 'Safe',
   suspicious: 'Suspicious',
   malicious: 'Malicious',
 };
-
 
 export function sortSignalsForDisplay(signals: Signal[]): Signal[] {
   return [...signals].sort((a, b) => {
@@ -97,7 +85,6 @@ export function sortSignalsForDisplay(signals: Signal[]): Signal[] {
     return b.weight - a.weight;
   });
 }
-
 
 export function summarize(kind: 'url' | 'file', result: ScoreResult, signals: Signal[]): string {
   const risk = sortSignalsForDisplay(signals.filter((s) => !s.mitigates && s.weight > 0));
@@ -116,7 +103,6 @@ export function summarize(kind: 'url' | 'file', result: ScoreResult, signals: Si
   }
   return `${subject} looks low-risk, with only minor indicators. No strong threat signals found.`;
 }
-
 
 export function buildReport(input: {
   id: string;
@@ -146,7 +132,6 @@ export function buildReport(input: {
     durationMs: input.durationMs,
   };
 }
-
 
 export function signal(
   s: Omit<Signal, 'confidence'> & { confidence?: number },

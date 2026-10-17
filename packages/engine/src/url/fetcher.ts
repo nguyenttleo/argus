@@ -1,5 +1,3 @@
-
-
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
@@ -98,7 +96,6 @@ export function requestOnce(
     const isHttps = target.protocol === 'https:';
     const mod = isHttps ? https : http;
 
-
     const lookup: net.LookupFunction = (_hostname, options, cb) => {
 
       if (options && typeof options === 'object' && options.all) {
@@ -109,9 +106,6 @@ export function requestOnce(
         (cb as (e: null, a: string, f: number) => void)(null, pinnedIp, pinnedFamily);
       }
     };
-
-
-
 
     let settled = false;
     let deadline: ReturnType<typeof setTimeout>;
@@ -249,7 +243,6 @@ export async function safeFetch(rawUrl: string, options: FetchOptions = {}): Pro
       current = next;
       continue;
     }
-
 
     const contentType = (hop.headers['content-type'] as string | undefined)?.split(';')[0]?.trim();
     const bodyText = hop.body.toString('utf8');

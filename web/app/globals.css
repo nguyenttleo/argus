@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-
 @theme {
   --color-bg: #272822;
   --color-bg-deep: #1e1f1c;
@@ -58,16 +57,6 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #4e5e2b;
-}
-
-.crt {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(130% 130% at 50% 0%, transparent 62%, rgba(0, 0, 0, 0.35)),
-    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.12) 3px);
 }
 
 .frame {
@@ -453,7 +442,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crt,
   .caret::after {
     animation: none;
   }

@@ -6,7 +6,6 @@ const fixedDeps = { now: () => new Date('2026-01-01T00:00:00Z'), idGen: () => 'f
 const EICAR = 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
 const enc = (s: string) => new TextEncoder().encode(s);
 
-
 function makeZip(name: string, uncompSize = 0, compSize = 0): Uint8Array {
   const nameBytes = enc(name);
   const N = nameBytes.length;
@@ -117,7 +116,7 @@ test('report shape and timing are populated', async () => {
   const r = await analyzeFile({ filename: 'x.txt', bytes: enc('hello') }, {}, fixedDeps);
   assert.equal(r.id, 'file-test');
   assert.equal(r.kind, 'file');
-  assert.equal(r.engineVersion, '1.0.0');
+  assert.equal(r.engineVersion, '1.2.7');
   assert.ok(typeof r.confidence === 'number');
 });
 

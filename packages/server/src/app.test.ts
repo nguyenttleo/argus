@@ -61,7 +61,6 @@ test('POST /api/scan/url scores a phishing URL malicious and persists it', async
   assert.equal(report.verdict, 'malicious');
   assert.equal(report.kind, 'url');
 
-
   const get = await app.inject({ method: 'GET', url: `/api/scan/${report.id}` });
   assert.equal(get.statusCode, 200);
   assert.equal(get.json().id, report.id);

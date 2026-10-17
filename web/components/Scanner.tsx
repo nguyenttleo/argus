@@ -5,7 +5,6 @@ import { scanFile, scanUrl } from '@/lib/api';
 import type { Report } from '@/lib/types';
 import Dropzone from './Dropzone';
 
-
 const EICAR_B64 = 'WDVPIVAlQEFQWzRcUFpYNTQoUF4pN0NDKTd9JEVJQ0FSLVNUQU5EQVJELUFOVElWSVJVUy1URVNULUZJTEUhJEgrSCo=';
 const PHASES = ['lexical', 'signatures', 'yara', 'reputation', 'scoring'];
 

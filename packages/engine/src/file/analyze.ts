@@ -1,5 +1,3 @@
-
-
 import { randomUUID } from 'node:crypto';
 import {
   buildReport,
@@ -98,7 +96,6 @@ export async function analyzeFile(
     });
   }
 
-
   if (mismatch.executableMasquerade) {
     signals.push({
       id: 'file.exe_masquerade',
@@ -123,7 +120,6 @@ export async function analyzeFile(
     });
   }
 
-
   if (entropy > HIGH_ENTROPY && !(detected && NATURALLY_HIGH_ENTROPY.has(detected.family)) && bytes.length > 256) {
     signals.push({
       id: 'file.high_entropy',
@@ -136,7 +132,6 @@ export async function analyzeFile(
       evidence: { entropy },
     });
   }
-
 
   const rules = deps.rules ?? loadBuiltinRules().rules;
   const yaraMatches = scanBytes(bytes, rules);
@@ -162,7 +157,6 @@ export async function analyzeFile(
     });
   }
 
-
   const stat = analyzeStatic(bytes, input.filename, detected);
   detail.staticFindings = stat.findings;
   if (stat.pe) {
@@ -171,7 +165,6 @@ export async function analyzeFile(
   }
   signals.push(...stat.signals);
   for (const ic of stat.iocs) iocs.push(ic);
-
 
   let repResults: ReputationResult[];
   if (options.reputation) {
@@ -210,7 +203,6 @@ export async function analyzeFile(
       confidence: 0.5,
     });
   }
-
 
   const detonateFn = deps.detonate ?? tartarusDetonate;
   if (options.detonate && config.tartarusUrl) {

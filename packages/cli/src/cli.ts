@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { analyzeUrl, analyzeFile, InvalidUrlError } from '@argus/engine';

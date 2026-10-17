@@ -1,5 +1,3 @@
-
-
 import type { DetonationResult, Ioc } from '@argus/shared';
 import type { EngineConfig } from '../config.ts';
 import { extractIocs } from './static.ts';

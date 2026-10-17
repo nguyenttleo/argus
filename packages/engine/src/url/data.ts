@@ -1,6 +1,3 @@
-
-
-
 export const BRANDS: Record<string, string> = {
   paypal: 'paypal.com',
   google: 'google.com',
@@ -45,7 +42,6 @@ export const BRANDS: Record<string, string> = {
   yahoo: 'yahoo.com',
 };
 
-
 export const SUSPICIOUS_TLDS = new Set([
   'tk', 'ml', 'ga', 'cf', 'gq', 'top', 'xyz', 'zip', 'mov', 'country', 'kim',
   'work', 'click', 'link', 'gdn', 'loan', 'men', 'date', 'racing', 'win',
@@ -55,7 +51,6 @@ export const SUSPICIOUS_TLDS = new Set([
   'skin', 'cyou', 'buzz', 'support', 'live', 'shop',
 ]);
 
-
 export const URL_SHORTENERS = new Set([
   'bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly',
   'cutt.ly', 'rebrand.ly', 'bl.ink', 'shorturl.at', 'rb.gy', 'tiny.cc', 't.ly',
@@ -63,14 +58,12 @@ export const URL_SHORTENERS = new Set([
   'mcaf.ee', 'shorte.st', 'tr.im', 'cli.gs',
 ]);
 
-
 export const PHISHING_KEYWORDS = [
   'login', 'log-in', 'signin', 'sign-in', 'verify', 'verification', 'secure',
   'security', 'account', 'update', 'confirm', 'webscr', 'banking', 'wallet',
   'recover', 'unlock', 'suspend', 'suspended', 'alert', 'billing', 'invoice',
   'authenticate', 'authorize', 'unusual', 'limited', 'restricted',
 ];
-
 
 export const POPULAR_DOMAINS = new Set([
   ...Object.values(BRANDS),
@@ -83,12 +76,10 @@ export const POPULAR_DOMAINS = new Set([
   'wikihow.com', 'x.com', 'cloudfront.net', 'akamai.com', 'googleusercontent.com',
 ]);
 
-
 export const TRUSTED_SSO_RELYING_PARTIES = new Set([
   'instructure.com',
   'canvaslms.com',
 ]);
-
 
 export const TRUSTED_SSO_IDPS = new Set([
   'microsoftonline.com',
@@ -102,12 +93,10 @@ export const TRUSTED_SSO_IDPS = new Set([
   'accounts.google.com',
 ]);
 
-
 export const REDIRECT_PARAMS = new Set([
   'url', 'redirect', 'redirect_uri', 'redirecturl', 'return', 'returnurl',
   'return_to', 'next', 'continue', 'dest', 'destination', 'goto', 'target', 'r', 'u',
 ]);
-
 
 export const DANGEROUS_EXTS = new Set([
   'exe', 'scr', 'pif', 'com', 'bat', 'cmd', 'js', 'jse', 'vbs', 'vbe', 'wsf',

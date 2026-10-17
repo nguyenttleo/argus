@@ -1,12 +1,8 @@
-
-
-export const ENGINE_VERSION = '1.0.0';
+export const ENGINE_VERSION = '1.2.7';
 
 export type ScanKind = 'url' | 'file';
 
-
 export type Verdict = 'safe' | 'suspicious' | 'malicious';
-
 
 export type Severity = 'info' | 'low' | 'medium' | 'high' | 'critical';
 
@@ -17,7 +13,6 @@ export const SEVERITY_RANK: Record<Severity, number> = {
   high: 3,
   critical: 4,
 };
-
 
 export type SignalCategory =
   | 'lexical'
@@ -30,7 +25,6 @@ export type SignalCategory =
   | 'yara'
   | 'detonation'
   | 'meta';
-
 
 export interface Signal {
 
@@ -71,7 +65,6 @@ export interface Ioc {
   note?: string;
 }
 
-
 export interface Report {
   id: string;
   kind: ScanKind;
@@ -92,8 +85,6 @@ export interface Report {
   engineVersion: string;
   durationMs: number;
 }
-
-
 
 export interface RedirectHop {
   url: string;
@@ -193,8 +184,6 @@ export interface UrlScanDetail {
   reputation: ReputationResult[];
 }
 
-
-
 export interface StaticFinding {
   id: string;
   title: string;
@@ -267,9 +256,6 @@ export interface FileScanDetail {
   detonation?: DetonationResult;
 }
 
-
-
-
 export interface ScanSummary {
   id: string;
   kind: ScanKind;
@@ -287,8 +273,6 @@ export interface Stats {
   byVerdict: Record<Verdict, number>;
   byKind: Record<ScanKind, number>;
 }
-
-
 
 export interface UrlScanOptions {
 

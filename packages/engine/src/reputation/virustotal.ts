@@ -1,7 +1,6 @@
 import type { ReputationResult } from '@argus/shared';
 import { fetchJson, unavailable, type ReputationProvider } from './provider.ts';
 
-
 const ENDPOINT = 'https://www.virustotal.com/api/v3/files/';
 
 interface VtResponse {

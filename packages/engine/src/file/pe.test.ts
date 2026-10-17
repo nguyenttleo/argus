@@ -4,7 +4,6 @@ import { createHash } from 'node:crypto';
 import { parsePeDetail } from './pe.ts';
 import { extractIocs } from './static.ts';
 
-
 function makePe(): Uint8Array {
   const b = Buffer.alloc(0x300);
   b.writeUInt16LE(0x5a4d, 0);
@@ -75,8 +74,6 @@ test('truncated PE does not crash', () => {
     assert.doesNotThrow(() => parsePeDetail(full.subarray(0, len)));
   }
 });
-
-
 
 test('extractIocs finds crypto addresses, CVEs, onion, registry', () => {
   const text = [

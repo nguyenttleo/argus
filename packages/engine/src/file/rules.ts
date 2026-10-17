@@ -2,7 +2,6 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseYaraRules, type YaraRule } from './yara.ts';
 
-
 let cached: { rules: YaraRule[]; errors: string[] } | undefined;
 
 const BUILTIN = fileURLToPath(new URL('../../rules/builtin.yar', import.meta.url));

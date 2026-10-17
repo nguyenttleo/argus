@@ -1,7 +1,3 @@
-
-
-
-
 export interface YaraStringDef {
   id: string;
   kind: 'text' | 'hex' | 'regex';
@@ -38,9 +34,6 @@ export interface ParseResult {
   rules: YaraRule[];
   errors: string[];
 }
-
-
-
 
 function stripComments(src: string): string {
   let out = '';
@@ -128,7 +121,6 @@ export function parseYaraRules(input: string): ParseResult {
   }
   return { rules, errors };
 }
-
 
 function matchBrace(src: string, openIdx: number): number {
   let depth = 0;
@@ -257,8 +249,6 @@ function parseHex(src: string): HexPart[] {
   return parts;
 }
 
-
-
 type Node =
   | { t: 'num'; v: number }
   | { t: 'str'; id: string }
@@ -353,7 +343,6 @@ function parseCondition(src: string): Node {
     const t = next();
     if (!t || t.v !== v) throw new Error(`expected "${v}" but got "${t?.v ?? 'EOF'}"`);
   };
-
 
   const BIN_PREC: Record<string, number> = {
     or: 1, and: 2, '==': 3, '!=': 3, '<': 3, '<=': 3, '>': 3, '>=': 3, '+': 4, '-': 4, '*': 5, '%': 5,
@@ -466,8 +455,6 @@ function parseCondition(src: string): Node {
   return ast;
 }
 
-
-
 interface ScanCtx {
   buf: Uint8Array;
   latin1: string;
@@ -548,8 +535,6 @@ function matchHexAt(buf: Uint8Array, pos: number, parts: HexPart[], pi: number):
   }
   return false;
 }
-
-
 
 function readUint(buf: Uint8Array, off: number, size: number): number {
   if (off < 0 || off + size > buf.length) return 0;
@@ -647,11 +632,8 @@ function evalOf(node: Extract<Node, { t: 'of' }>, ctx: ScanCtx, rule: YaraRule):
   return matched >= need && ids.length > 0 ? 1 : 0;
 }
 
-
-
 export function scanBytes(buf: Uint8Array, rules: YaraRule[]): YaraMatch[] {
   const out: YaraMatch[] = [];
-
 
   const latin1 = Buffer.from(buf).toString('latin1');
   for (const rule of rules) {

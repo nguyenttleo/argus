@@ -1,5 +1,3 @@
-
-
 import type { Ioc, PeDetail, Signal, StaticFinding } from '@argus/shared';
 import type { DetectedType } from './magic.ts';
 import { parsePeDetail } from './pe.ts';
@@ -28,8 +26,6 @@ function u32(buf: Uint8Array, off: number): number {
   if (off + 4 > buf.length) return 0;
   return (buf[off]! | (buf[off + 1]! << 8) | (buf[off + 2]! << 16) | (buf[off + 3]! << 24)) >>> 0;
 }
-
-
 
 const EOCD_SIG = 0x06054b50;
 const CDIR_SIG = 0x02014b50;
@@ -68,8 +64,6 @@ export function parseZip(buf: Uint8Array): ArchiveInfo | undefined {
   return { entries: entries || count, totalCompressed, totalUncompressed, ratio, names };
 }
 
-
-
 function latin1(buf: Uint8Array, max = 5_000_000): string {
   return Buffer.from(buf.subarray(0, max)).toString('latin1');
 }
@@ -91,15 +85,12 @@ function finding(
   });
 }
 
-
-
 export function analyzeStatic(buf: Uint8Array, filename: string, detected?: DetectedType): StaticResult {
   const findings: StaticFinding[] = [];
   const signals: Signal[] = [];
   const iocs: Ioc[] = [];
   const result: StaticResult = { findings, signals, iocs };
   const text = latin1(buf);
-
 
   if (detected?.type === 'zip') {
     const arc = parseZip(buf);
@@ -140,7 +131,6 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
     }
   }
 
-
   if (detected?.type === 'ole') {
     const markers = ['vbaProject', '_VBA_PROJECT', 'VBA_PROJECT', 'Auto_Open', 'AutoOpen', 'Workbook_Open', 'Document_Open', 'Macros'];
     const hit = markers.filter((m) => text.includes(m));
@@ -155,7 +145,6 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
       });
     }
   }
-
 
   if (detected?.type === 'pdf') {
     const checks: Array<[RegExp, string, number, StaticFinding['severity']]> = [
@@ -180,7 +169,6 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
       });
     }
   }
-
 
   if (detected?.type === 'pe') {
     const pe = parsePeDetail(buf);
@@ -232,7 +220,6 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
     }
   }
 
-
   if (detected?.type === 'script' || detected === undefined) {
     const patterns: Array<[RegExp, string]> = [
       [/powershell\s+-(enc|encodedcommand|e )/i, 'encoded PowerShell command'],
@@ -267,12 +254,10 @@ export function analyzeStatic(buf: Uint8Array, filename: string, detected?: Dete
     }
   }
 
-
   result.iocs.push(...extractIocs(text));
 
   return result;
 }
-
 
 function fmtBytes(n: number): string {
   if (n < 1024) return `${n} B`;

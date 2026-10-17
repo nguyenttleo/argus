@@ -3,8 +3,6 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { safeFetch, extractTitle, requestOnce } from './fetcher.ts';
 
-
-
 test('safeFetch refuses non-http(s) schemes', async () => {
   const r = await safeFetch('file:///etc/passwd');
   assert.equal(r.ok, false);
@@ -25,16 +23,10 @@ test('safeFetch rejects an invalid URL', async () => {
   assert.equal(r.error, 'invalid URL');
 });
 
-
-
 test('extractTitle pulls and collapses the <title>', () => {
   assert.equal(extractTitle('<html><head><title>  Hello\n World </title>'), 'Hello World');
   assert.equal(extractTitle('<html>no title</html>'), undefined);
 });
-
-
-
-
 
 let server: http.Server;
 let port = 0;

@@ -6,7 +6,6 @@ export interface FileHashes {
   md5: string;
 }
 
-
 export function hashBytes(buf: Uint8Array): FileHashes {
   return {
     sha256: createHash('sha256').update(buf).digest('hex'),
@@ -14,7 +13,6 @@ export function hashBytes(buf: Uint8Array): FileHashes {
     md5: createHash('md5').update(buf).digest('hex'),
   };
 }
-
 
 export function shannonEntropy(buf: Uint8Array): number {
   if (buf.length === 0) return 0;

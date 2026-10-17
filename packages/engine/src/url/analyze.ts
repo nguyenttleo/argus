@@ -1,5 +1,3 @@
-
-
 import { randomUUID } from 'node:crypto';
 import {
   buildReport,
@@ -247,7 +245,6 @@ export async function analyzeUrl(
   const iocs: Ioc[] = [];
   if (detail.registrableDomain) iocs.push({ type: 'domain', value: detail.registrableDomain });
 
-
   const impersonatesBrand =
     signalsById.has('url.typosquat') ||
     signalsById.has('url.brand_in_subdomain') ||
@@ -256,10 +253,7 @@ export async function analyzeUrl(
   const domain = lexical.parsed.registrableDomain;
   const httpScheme = lexical.parsed.scheme === 'http' || lexical.parsed.scheme === 'https';
 
-
   const doEnrich = !!options.fetch && httpScheme && !lexical.parsed.isIpHost && !!domain;
-
-
 
   const dnsPromise: Promise<DnsInfo | undefined> = doEnrich
     ? gatherDns(domain!, deps.dnsResolver, config.fetchTimeoutMs).catch(() => undefined)
@@ -271,7 +265,6 @@ export async function analyzeUrl(
         now: deps.now ? () => deps.now!().getTime() : undefined,
       }).catch(() => undefined)
     : Promise.resolve(undefined);
-
 
   let reputationTarget = lexical.parsed.normalized;
   let fetchBody: string | undefined;
@@ -313,8 +306,6 @@ export async function analyzeUrl(
       for (const s of tlsSignals(fetchRes.tls, scheme)) addSignal(s);
     }
 
-
-
     if (fetchRes.ok && fetchRes.finalUrl && fetchRes.finalUrl !== lexical.parsed.normalized) {
       reputationTarget = fetchRes.finalUrl;
       try {
@@ -347,7 +338,6 @@ export async function analyzeUrl(
     }
   }
 
-
   const dns = await dnsPromise;
   if (dns) {
     detail.dns = dns;
@@ -358,7 +348,6 @@ export async function analyzeUrl(
     detail.rdap = rdap;
     for (const s of rdapSignals(rdap)) addSignal(s);
   }
-
 
   if (fetchBody && looksLikeHtml(detail.http?.contentType, fetchBody)) {
     const content = analyzeContent(fetchBody, pageUrl);
@@ -376,7 +365,6 @@ export async function analyzeUrl(
       addSignal(s);
     }
   }
-
 
   if (options.reputation) {
     const registry = deps.registry ?? createReputationRegistry(config);

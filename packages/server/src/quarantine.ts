@@ -1,5 +1,3 @@
-
-
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
 import { mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -30,7 +28,6 @@ export class Quarantine {
     return join(this.#dir, `${sha256}.enc`);
   }
 
-
   store(bytes: Uint8Array, sha256: string): string {
     const iv = randomBytes(IV_LEN);
     const cipher = createCipheriv('aes-256-gcm', this.#key, iv);
@@ -44,7 +41,6 @@ export class Quarantine {
     return existsSync(this.#path(sha256));
   }
 
-
   retrieve(sha256: string): Uint8Array | undefined {
     const p = this.#path(sha256);
     if (!existsSync(p)) return undefined;
@@ -56,7 +52,6 @@ export class Quarantine {
     decipher.setAuthTag(tag);
     return new Uint8Array(Buffer.concat([decipher.update(ct), decipher.final()]));
   }
-
 
   sweep(now: number = Date.now()): number {
     if (!existsSync(this.#dir)) return 0;
@@ -74,7 +69,6 @@ export class Quarantine {
     return removed;
   }
 }
-
 
 export function resolveQuarantineKey(dataDir: string, secret?: string): Buffer {
   if (secret) {
